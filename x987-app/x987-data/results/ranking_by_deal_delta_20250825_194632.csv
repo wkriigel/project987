@@ -1,0 +1,4 @@
+source_url,year,model,price,fair_value_usd,deal_delta_usd,deal_quality,transmission,mileage,exterior_color,interior_color,composite_score,ranking_timestamp,rank
+https://example.com/listing1,2010,Cayman,"$35,000",32000,3000,Good Deal,Manual,"45,000",Guards Red,Black,825.6,2025-08-25T19:46:32.803914,2
+https://example.com/listing3,2009,Cayman,"$32,000",30000,2000,Good Deal,Manual,"60,000",Silver,Black,724.09,2025-08-25T19:46:32.803945,3
+https://example.com/listing2,2011,Cayman S,"$38,500",37500,1000,Fair Deal,Automatic,"52,000",Black,Red,1124.91,2025-08-25T19:46:32.803938,1

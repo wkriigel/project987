@@ -1,0 +1,48 @@
+import { Meta, Canvas, Story, Source } from '@storybook/blocks'
+import { ThresholdChip } from './ThresholdChip'
+
+<Meta of={ThresholdChip} title="Components/ThresholdChip/Usage" />
+
+# ThresholdChip
+
+Use a five-level chip to indicate desirability relative to a threshold. Levels: poor → weak → fair → good → excellent (best). Two light backgrounds for the most desirable (good/excellent), three darker for the rest (fair/weak/poor). Background opacity also steps from 100% at excellent down by ~15% per level.
+
+## Usage
+
+<Source
+  code={`import { ThresholdChip } from '@/components/ThresholdChip'
+
+<ThresholdChip color="teal" level="poor" text="poor" />
+<ThresholdChip color="teal" level="weak" text="weak" />
+<ThresholdChip color="teal" level="fair" text="fair" />
+<ThresholdChip color="teal" level="good" text="good" />
+<ThresholdChip color="teal" level="excellent" text="excellent" />
+`} language="tsx" />
+
+## Preview
+
+<Canvas>
+  <Story name="Teal levels">
+    {() => (
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <ThresholdChip color="teal" level="poor" text="poor" />
+        <ThresholdChip color="teal" level="weak" text="weak" />
+        <ThresholdChip color="teal" level="fair" text="fair" />
+        <ThresholdChip color="teal" level="good" text="good" />
+        <ThresholdChip color="teal" level="excellent" text="excellent" />
+      </div>
+    )}
+  </Story>
+  <Story name="Green levels">
+    {() => (
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <ThresholdChip color="green" level="poor" text="poor" />
+        <ThresholdChip color="green" level="weak" text="weak" />
+        <ThresholdChip color="green" level="fair" text="fair" />
+        <ThresholdChip color="green" level="good" text="good" />
+        <ThresholdChip color="green" level="excellent" text="excellent" />
+      </div>
+    )}
+  </Story>
+  
+</Canvas>

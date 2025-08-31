@@ -1,0 +1,3 @@
+source_url,year,model,price,mileage,exterior_color,interior_color,fair_value_usd,fair_value_calculation,asking_price_usd,deal_delta_usd,deal_percentage,deal_quality
+https://example.com/listing1,2010,Cayman,"$35,000","45,000",Guards Red,Black,32200,"{'base_value': 30500, 'year_adjustment': 1000, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 700, 'calculation_timestamp': '2025-08-25T19:46:29.090219'}",35000,2800,8.695652173913043,Overpriced
+https://example.com/listing2,2011,Cayman S,"$38,500","52,000",Black,Red,38100,"{'base_value': 30500, 'year_adjustment': 500, 'model_premium': 7000, 'mileage_adjustment': -500, 'color_premium': 600, 'calculation_timestamp': '2025-08-25T19:46:29.090676'}",38500,400,1.0498687664041995,Fair Price

@@ -1,0 +1,3 @@
+source_url,exterior_color,exterior_color_confidence,extraction_timestamp,data_quality_score
+https://example.com,Red,1.0,2025-08-25T19:46:19.614987,1.0
+https://example.com,Black,1.0,2025-08-25T19:46:19.615636,1.0

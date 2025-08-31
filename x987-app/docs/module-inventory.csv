@@ -1,0 +1,71 @@
+module_path,provides,depends,consumed_by,contracts_in,contracts_out,side_effects,risks,status
+x987/__main__.py,main function,x987.cli.main:main,Python -m x987 command,None,CLI execution,None,Low - simple entry point,active
+x987/__init__.py,package API,x987 submodules,External applications,None,Public API exports,None,Low - well-defined API,active
+x987/cli/__init__.py,CLI functions,x987.cli modules,x987.__main__:main,None,CLI command functions,None,Low - CLI interface,active
+x987/cli/main.py,CLI commands,x987.config:get_config x987.utils.log:setup_logging x987.doctor:run_doctor x987.pipeline:get_pipeline_runner,x987.__main__:main,Command execution,File I/O logging,Medium - pipeline orchestration,active
+x987/cli/utils.py,CLI utilities,Standard library,x987.cli.main:main,None,Timeout protection utilities,None,Low - utility functions,active
+x987/pipeline/__init__.py,pipeline runner,x987.pipeline.steps modules,x987.cli.main:main,None,Pipeline execution functions,None,Medium - pipeline orchestration,active
+x987/pipeline/steps/base.py,base step classes,Standard library,All pipeline steps,None,StepResult StepStatus BasePipelineStep,None,Low - base classes,active
+x987/pipeline/steps/registry.py,step registry,x987.pipeline.steps.base:BasePipelineStep,x987.pipeline.steps.runner:PipelineRunner,None,Step discovery and dependency resolution,None,Medium - dynamic loading,active
+x987/pipeline/steps/runner.py,pipeline runner,x987.pipeline.steps.base:BasePipelineStep x987.pipeline.steps.registry:PIPELINE_REGISTRY,x987.cli.main:main,Config dict StepResult dict,Pipeline execution results,File I/O logging,Medium - pipeline orchestration,active
+x987/pipeline/steps/collection.py,URL collection,x987.config:get_config playwright,x987.pipeline.steps.scraping:ScrapingStep,Search URLs,Collected listing URLs,Network I/O file I/O,Medium - web scraping fragility,active
+x987/pipeline/steps/scraping.py,data extraction,x987.pipeline.steps.collection:CollectionStep x987.config:get_config,x987.pipeline.steps.transformation:TransformationStep,Collection results,Scraped vehicle data,File I/O logging,Medium - depends on collection quality,active
+x987/pipeline/steps/transformation.py,data transformation,x987.pipeline.steps.scraping:ScrapingStep x987.extractors:get_unified_extractor x987.options:get_registry,x987.pipeline.steps.deduplication:DeduplicationStep,Scraped data,Transformed vehicle data,File I/O,Medium - file creation affects flow,active
+x987/pipeline/steps/deduplication.py,deduplication,x987.pipeline.steps.transformation:TransformationStep,x987.pipeline.steps.fair_value:FairValueStep,Transformed data,Deduplicated data,File I/O,Medium - deduplication logic,active
+x987/pipeline/steps/fair_value.py,fair value calculation,x987.pipeline.steps.deduplication:DeduplicationStep x987.config:get_config,x987.pipeline.steps.ranking:RankingStep,Deduplicated data,Fair values and deal deltas,File I/O,Medium - pricing model assumptions,active
+x987/pipeline/steps/ranking.py,vehicle ranking,x987.pipeline.steps.fair_value:FairValueStep,x987.pipeline.steps.view:ViewStep end users,Fair value data,Ranked vehicle listings,None,Medium - ranking affects UX,active
+x987/pipeline/steps/view.py,data display,x987.pipeline.steps.transformation:TransformationStep x987.pipeline.steps.ranking:RankingStep,End users analysts,Transformed and ranked data,Formatted reports,None,Low - display only,active
+x987/extractors/__init__.py,extractor system,x987.extractors modules,x987.pipeline.steps.transformation:TransformationStep,None,Extractor registry and unified extractor,None,Medium - pattern matching,active
+x987/extractors/base.py,base extractor classes,Standard library,All extractor implementations,None,BaseExtractor ExtractionResult,None,Low - base classes,active
+x987/extractors/registry.py,extractor registry,x987.extractors.base:BaseExtractor,x987.extractors:get_registry,None,Extractor discovery and management,None,Medium - dynamic loading,active
+x987/extractors/unified.py,unified extractor,x987.extractors modules,x987.pipeline.steps.transformation:TransformationStep,None,Unified extraction interface,None,Medium - extraction logic,active
+x987/extractors/year.py,year extraction,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Text content,Year values with confidence,None,Medium - pattern matching,active
+x987/extractors/price.py,price extraction,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Text content,Price values with confidence,None,Medium - pattern matching,active
+x987/extractors/mileage.py,mileage extraction,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Text content,Mileage values with confidence,None,Medium - pattern matching,active
+x987/extractors/model_trim.py,model extraction,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Text content,Model and trim values,None,Medium - pattern matching,active
+x987/extractors/colors.py,color extraction,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Text content,Exterior and interior colors,None,Medium - pattern matching,active
+x987/extractors/source.py,source extraction,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Text content URL,Source identification,None,Medium - pattern matching,active
+x987/extractors/deal.py,deal analysis,Standard library,x987.extractors.unified:UNIFIED_EXTRACTOR,Vehicle data,Deal quality assessment,None,Medium - analysis logic,active
+x987/options/__init__.py,options system,x987.options modules,x987.pipeline.steps.transformation:TransformationStep,None,Options registry and detector,None,Medium - pattern matching,active
+x987/options/base.py,base option classes,Standard library,All option implementations,None,OptionDefinition BaseOption,None,Low - base classes,active
+x987/options/registry.py,options registry,x987.options.base:BaseOption,x987.options:get_registry,None,Options discovery and management,None,Medium - dynamic loading,active
+x987/options/detector.py,options detector,x987.options modules,x987.pipeline.steps.transformation:TransformationStep,None,Options detection interface,None,Medium - detection logic,active
+x987/options/transmission.py,transmission detection,Standard library,x987.options.detector:OptionsDetector,Text content,Transmission type detection,None,Medium - pattern matching,active
+x987/options/convenience.py,convenience features,Standard library,x987.options.detector:OptionsDetector,Text content,Convenience feature detection,None,Medium - pattern matching,active
+x987/options/exterior.py,exterior features,Standard library,x987.options.detector:OptionsDetector,Text content,Exterior feature detection,None,Medium - pattern matching,active
+x987/options/seating.py,seating features,Standard library,x987.options.detector:OptionsDetector,Text content,Seating feature detection,None,Medium - pattern matching,active
+x987/options/technology.py,technology features,Standard library,x987.options.detector:OptionsDetector,Text content,Technology feature detection,None,Medium - pattern matching,active
+x987/options/performance.py,performance features,Standard library,x987.options.detector:OptionsDetector,Text content,Performance feature detection,None,Medium - pattern matching,active
+x987/options/heated_seats.py,heated seats detection,Standard library,x987.options.detector:OptionsDetector,Text content,Heated seats detection,None,Medium - pattern matching,active
+x987/options/park_assist.py,park assist detection,Standard library,x987.options.detector:OptionsDetector,Text content,Park assist detection,None,Medium - pattern matching,active
+x987/options/bi_xenon_headlights.py,headlights detection,Standard library,x987.options.detector:OptionsDetector,Text content,Bi-xenon headlights detection,None,Medium - pattern matching,active
+x987/options/bose_surround_sound.py,audio detection,Standard library,x987.options.detector:OptionsDetector,Text content,Bose audio detection,None,Medium - pattern matching,active
+x987/options/pcm_navigation.py,navigation detection,Standard library,x987.options.detector:OptionsDetector,Text content,PCM navigation detection,None,Medium - pattern matching,active
+x987/options/sport_seats.py,sport seats detection,Standard library,x987.options.detector:OptionsDetector,Text content,Sport seats detection,None,Medium - pattern matching,active
+x987/options/upgraded_wheels.py,wheels detection,Standard library,x987.options.detector:OptionsDetector,Text content,Upgraded wheels detection,None,Medium - pattern matching,active
+x987/options/limited_slip_differential.py,differential detection,Standard library,x987.options.detector:OptionsDetector,Text content,Limited slip differential detection,None,Medium - pattern matching,active
+x987/options/pasm.py,PASM detection,Standard library,x987.options.detector:OptionsDetector,Text content,PASM detection,None,Medium - pattern matching,active
+x987/options/sport_chrono.py,sport chrono detection,Standard library,x987.options.detector:OptionsDetector,Text content,Sport chrono detection,None,Medium - pattern matching,active
+x987/options/sport_exhaust.py,sport exhaust detection,Standard library,x987.options.detector:OptionsDetector,Text content,Sport exhaust detection,None,Medium - pattern matching,active
+x987/config/__init__.py,config management,x987.config modules,All modules needing config,None,Config loading and validation,None,Low - configuration validation,active
+x987/config/manager.py,config manager,tomli/tomllib,x987.config:get_config,TOML files,ConfigManager instance,File I/O,Low - file parsing,active
+x987/config/validation.py,config validation,Standard library,x987.config.manager:ConfigManager,Config data,Validation results,None,Low - validation logic,active
+x987/config/defaults.py,default config,None,x987.config.manager:ConfigManager,None,Default configuration values,None,Low - static defaults,active
+x987/view/__init__.py,view system,x987.view modules,x987.cli.main:main,None,View components and display functions,None,Low - display only,active
+x987/view/modular_view.py,modular view,rich library,REMOVED,Vehicle data,Removed in v4.5 (use pipeline Enhanced View),None,Low - display only,removed
+x987/view/report.py,report generation,rich library,x987.view modules,Vehicle data,Rich formatted reports,None,Low - display only,active
+x987/view/report_clean.py,clean reports,rich library,x987.view modules,Vehicle data,Clean formatted reports,None,Low - display only,active
+x987/view/report_fixed.py,fixed reports,rich library,x987.view modules,Vehicle data,Fixed formatted reports,None,Low - display only,active
+x987/view/theme.py,styling theme,rich library,x987.view modules,None,Theme styling functions,None,Low - styling only,active
+x987/utils/__init__.py,utility functions,x987.utils modules,All other modules,None,Common utility functions,None,Low - utility functions,active
+x987/utils/log.py,logging utilities,Standard library,x987.utils:setup_logging,None,Logging setup and logger instances,File I/O,Low - logging only,active
+x987/utils/io.py,I/O utilities,Standard library,x987.utils:read_csv write_csv,None,CSV and JSON I/O functions,File I/O,Low - file operations,active
+x987/utils/text.py,text processing,Standard library,x987.utils:clean_text extract_number,None,Text processing utilities,None,Low - text processing,active
+x987/utils/csv_io.py,CSV I/O,Standard library,x987.utils:read_csv write_csv,None,CSV file operations,File I/O,Low - file operations,active
+x987/utils/extractors.py,extraction utilities,Standard library,x987.utils modules,None,Extraction helper functions,None,Low - utility functions,active
+x987/scrapers/__init__.py,scraping system,x987.scrapers modules,x987.pipeline.steps.collection:CollectionStep,None,Scraping interfaces and profiles,None,Medium - web scraping,active
+x987/scrapers/base.py,base scraper classes,Standard library,x987.scrapers modules,None,BaseScraper ScrapingResult,None,Low - base classes,active
+x987/scrapers/profiles.py,site profiles,Standard library,x987.scrapers:get_site_profile,None,SiteProfile instances,None,Medium - site-specific logic,active
+x987/scrapers/universal.py,universal scraper,playwright x987.scrapers.profiles:SiteProfile,x987.scrapers:UniversalVDPScraper,None,Universal scraping interface,Network I/O,Medium - web scraping,active
+x987/collectors/__init__.py,collection system,playwright settings,x987.pipeline.steps.collection:CollectionStep,None,URL collection interfaces,None,Medium - web collection,active
+x987/doctor.py,system diagnostics,x987.config:get_config x987.utils.log:get_logger,x987.cli.main:cmd_doctor,None,System health check results,None,Low - diagnostic checks,active

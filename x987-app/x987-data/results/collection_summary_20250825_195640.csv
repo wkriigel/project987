@@ -1,0 +1,3 @@
+source_url,urls_collected,collection_timestamp,processing_status
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,1,2025-08-25T19:56:40.746439,success
+https://www.cars.com/shopping/results/?dealer_id=&keyword=&list_price_max=&list_price_min=&makes[]=porsche&maximum_distance=all&mileage_max=&models[]=porsche-cayman&page_size=20&sort=best_match_desc&stock_type=all&year_max=2012&year_min=2009&zip=30214,5,2025-08-25T19:56:40.746453,success

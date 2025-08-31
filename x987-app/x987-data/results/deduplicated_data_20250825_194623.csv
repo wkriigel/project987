@@ -1,0 +1,4 @@
+source_url,year,model,price,mileage,vin
+https://example.com/listing1,2010,Cayman,"$35,000","45,000",WP0AB2A91AK123456
+https://example.com/listing2,2011,Cayman S,"$38,500","52,000",WP0AB2A91AK789012
+https://example.com/listing3,2010,Cayman,"$35,000","45,000",WP0AB2A91AK123456

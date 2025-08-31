@@ -1,0 +1,3 @@
+source_url,year,model,fair_value_usd,asking_price_usd,deal_delta_usd,deal_quality,timestamp
+https://example.com/listing1,2010,Cayman,32200,35000,2800,Overpriced,2025-08-25T19:46:29.092377
+https://example.com/listing2,2011,Cayman S,38100,38500,400,Fair Price,2025-08-25T19:46:29.092389

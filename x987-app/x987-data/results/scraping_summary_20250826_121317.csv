@@ -1,0 +1,2 @@
+scraping_id,source_url,scraping_status,validation_status,validation_score,scraping_timestamp
+1,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,success,invalid,0,2025-08-26T12:13:16.905692

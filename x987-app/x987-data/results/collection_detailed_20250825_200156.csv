@@ -1,0 +1,9 @@
+source_url,listing_url,title,price,year,model,mileage,collection_timestamp,scraping_method,processed_timestamp,processing_status
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,https://www.cars.com/vehicledetail/e976df74-a8de-4fd2-b91f-c9d0568ef9ac/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,2012 Porsche Cayman Black Edition,"$42,997
+ Fair Deal","Min Year                
+                
+            
+            
+                
+                    Max Year",Cayman,"76,885 mi.
+13 days ago",2025-08-25T20:01:56.108894,autotempest_real,2025-08-25T20:01:56.175412,success

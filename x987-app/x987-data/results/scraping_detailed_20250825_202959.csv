@@ -1,0 +1,58 @@
+collection_timestamp,extracted_data,listing_url,model,preparation_timestamp,price,raw_html,raw_text,scraping_id,scraping_metadata,scraping_status,scraping_timestamp,source_url,title,validation_score,validation_status,year
+2025-08-25T20:29:58.663758,"{'year': 'Min Year                \n                \n            \n            \n                \n                    Max Year', 'make': 'Porsche', 'model': 'Cayman', 'price': '$42,997\n Fair Deal', 'mileage': '45,000', 'exterior_color': 'Guards Red', 'interior_color': 'Black', 'transmission': 'Manual', 'vin': 'WP0AB2A91AK123456', 'location': 'Atlanta, GA', 'dealer': 'Porsche Atlanta'}",https://www.cars.com/vehicledetail/e976df74-a8de-4fd2-b91f-c9d0568ef9ac/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,Cayman,2025-08-25T20:29:58.849908,"$42,997
+ Fair Deal","<html><body>
+        Vehicle: Min Year                
+                
+            
+            
+                
+                    Max Year Porsche Cayman
+        Price: $42,997
+ Fair Deal
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        </body></html>","
+        Vehicle: Min Year                
+                
+            
+            
+                
+                    Max Year Porsche Cayman
+        Price: $42,997
+ Fair Deal
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",1,"{'method': 'mock', 'headful': True, 'processing_time_ms': 500}",success,2025-08-25T20:29:59.351187,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2012 Porsche Cayman Black Edition,1.0,valid,"Min Year                
+                
+            
+            
+                
+                    Max Year"

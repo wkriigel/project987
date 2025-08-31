@@ -1,0 +1,11 @@
+scraping_id,source_url,scraping_status,validation_status,validation_score,scraping_timestamp
+1,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:21:56.173135
+2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:21:57.675142
+3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:21:59.177131
+4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:00.678308
+5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:02.180213
+6,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:03.681981
+7,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:05.184129
+8,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:06.686112
+9,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:08.188129
+10,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,success,valid,1.0,2025-08-25T22:22:09.690130

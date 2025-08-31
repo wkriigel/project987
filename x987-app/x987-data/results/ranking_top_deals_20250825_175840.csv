@@ -1,0 +1,5 @@
+category,source_url,year,model,price,deal_delta_usd,composite_score,rank
+overall_top_5_1,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2011,,"$38,500",6800,705.61,1
+overall_top_5_2,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,"$35,000",2800,305.6,2
+best_deal,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2011,,"$38,500",6800,705.61,1
+best_value,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2011,,"$38,500",6800,705.61,1

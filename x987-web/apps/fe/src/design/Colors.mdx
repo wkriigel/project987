@@ -1,0 +1,47 @@
+import { Meta } from '@storybook/blocks'
+import { ramps } from './tokens/colors'
+import { ColorSwatch } from '../components/ColorSwatch'
+
+<Meta title="Design/Colors/Documentation" />
+
+# Color System
+
+This palette is derived from the Python CLI theme and expanded into full 50–900 ramps using conventional design-token naming. Use these tokens consistently across components for predictable contrast and visual hierarchy.
+
+## Ramps
+
+Each ramp is a series from 50 (lightest) to 900 (darkest). Use lighter tones for backgrounds and darker tones for text.
+
+<div style={{ padding: 16 }}>
+  {Object.entries(ramps).map(([i, [name, ramp]]) => (
+    <section key={name} style={{ marginBottom: 24 }}>
+      <h3 style={{ margin: '8px 0' }}>{name}</h3>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        {Object.entries(ramp).map(([k, hex]) => (
+          <ColorSwatch key={k} hex={hex as string} token={`${name}-${k}`} />
+        ))}
+      </div>
+    </section>
+  ))}
+</div>
+
+## Usage Guidelines
+
+- Prefer role-based tokens (e.g., `bg.emphasis`, `text.muted`) mapped to palette values for consistency.
+- Ensure sufficient contrast for text (WCAG AA). Avoid low-contrast text on tinted backgrounds.
+- Reserve bright accents (teal-200/300) for data emphasis, not large background areas.
+- Use neutral grays for surfaces; keep page backgrounds dark for a scan-friendly UI.
+
+## Code Examples
+
+```tsx
+import { palette } from '@/design/tokens/colors'
+import { roles } from '@/design/tokens/roles'
+
+// Tailwind example via inline style
+<div style={{ backgroundColor: roles.bg.emphasis, color: roles.text.primary }}>Chip</div>
+
+// Styled chip examples
+<span style={{ background: roles.highlight.priceBg, padding: '2px 6px', borderRadius: 4, fontSize: 12 }}> $25k </span>
+<span style={{ background: roles.highlight.msrpBg, color: roles.highlight.msrpFg, padding: '2px 6px', borderRadius: 4, fontSize: 12 }}> $5k </span>
+```

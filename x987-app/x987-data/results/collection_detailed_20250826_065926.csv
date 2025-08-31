@@ -1,0 +1,20 @@
+source_url,listing_url,title,price,year,model,mileage,collection_timestamp,scraping_method,raw_text,raw_html,processed_timestamp,processing_status
+https://www.autotempest.com/results?make=porsche&model=cayman&year_min=2009&year_max=2012,https://autos.lotlinx.com?ad=WP0AB2A82GK185505&request=AdLink&pubId=12000&url=1&channelid=autotempest,2016 Porsche Cayman S,"$64,825","Min Year                
+                
+            
+            
+                
+                    Max Year",Cayman,"22,137 mi.
+Jul 18th",2025-08-26T06:59:25.645294,autotempest_real,"2016 Porsche Cayman S Min Year                
+                
+            
+            
+                
+                    Max Year Cayman $64,825 22,137 mi.
+Jul 18th","<html><body>2016 Porsche Cayman S Min Year                
+                
+            
+            
+                
+                    Max Year Cayman $64,825 22,137 mi.
+Jul 18th</body></html>",2025-08-26T06:59:26.117844,success

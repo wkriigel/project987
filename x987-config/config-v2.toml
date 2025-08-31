@@ -1,0 +1,207 @@
+[search]
+urls = [
+    #"https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
+    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
+    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214",
+]
+
+[fair_value]
+# Data-driven baselines from current dataset
+base_value_usd = 32800          # Cayman Base baseline (was 30500)
+s_premium_usd = 3900            # Cayman S premium over Cayman Base (was 7000)
+
+# New: Boxster-specific baselines (observed large gap vs Cayman)
+boxster_base_value_usd = 22100  # Boxster Base
+boxster_s_premium_usd = 11100   # Boxster S premium over Boxster Base
+
+# New: continuous drivers
+mileage_penalty_per_mile = -0.156   # ≈ -$156 per 1k miles
+options_multiplier = 1.61           # multiplier applied to summed catalog values
+
+# Year/color still supported for compatibility (kept as-is)
+year_step_usd = 500
+exterior_color_usd = 300
+interior_color_usd = 300
+
+[fair_value.special_trim_premiums]
+"Cayman R" = 30000
+"Boxster Spyder" = 30000
+"Black Edition" = 6000  # updated from 1500 based on observed premium vs Cayman S
+
+[scraping]
+concurrency = 2
+polite_delay_ms = 1000
+cap_listings = 150
+debug = true
+
+[options_v2]
+enabled = true
+
+# Enhanced options catalog configuration
+[options_v2.catalog]
+
+# -------------------------
+# Performance Options
+# -------------------------
+
+[[options_v2.catalog.performance]]
+id = "639/640"
+display = "Sport Chrono Package Plus"
+value_usd = 1000
+value_usd_msrp = 960
+patterns = [
+    "sport chrono", "chrono package", "chrono plus", "sport chrono plus",
+    "chrono package plus", "sport chrono package", "chrono", "sport chrono package plus"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.performance]]
+id = "PASM"
+display = "PASM"
+value_usd = 1200
+value_usd_msrp = 1990
+patterns = [
+    "pasm", "adaptive suspension", "active suspension", "adaptive damping",
+    "porsche active suspension management", "adaptive sport suspension"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.performance]]
+id = "220"
+display = "Limited Slip Differential (LSD)"
+value_usd = 1200
+value_usd_msrp = 890
+patterns = [
+    "limited slip", "lsd", "locking diff", "self-locking diff", "limited slip differential",
+    "limited slip differential lsd", "mechanical limited slip", "torque sensing differential"
+]
+standard_on_trims = ["Cayman R"]
+
+[[options_v2.catalog.performance]]
+id = "XLF"
+display = "Sport Exhaust (PSE)"
+value_usd = 1500
+value_usd_msrp = 2500
+patterns = [
+    "pse", "sport exhaust", "switchable exhaust", "performance exhaust",
+    "porsche sport exhaust", "sport exhaust system", "switchable sport exhaust",
+    "performance exhaust system", "sport exhaust pse"
+]
+standard_on_trims = []
+
+# Transmission (stored but not displayed)
+[[options_v2.catalog.performance]]
+id = "250"
+display = "PDK"
+value_usd = 0
+value_usd_msrp = 3200
+patterns = [
+    "pdk", "7-speed pdk", "porsche doppelkupplung", "7 speed pdk",
+    "7-speed automatic", "7 speed automatic"
+]
+standard_on_trims = []
+
+# -------------------------
+# Comfort & Interior Options
+# -------------------------
+
+[[options_v2.catalog.comfort]]
+id = "SSEAT"
+display = "Sport Seats / Adaptive Sport Seats"
+value_usd = 800
+value_usd_msrp = 1525
+patterns = [
+    "sport seats", "adaptive sport seats", "bucket seats", "shell seats",
+    "sport bucket seats", "adaptive sport bucket seats", "sport seating",
+    "adaptive sport seating", "sport seat package"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.comfort]]
+id = "HTD"
+display = "Heated Seats"
+value_usd = 200
+value_usd_msrp = 500
+patterns = [
+    "heated seats", "seat heating", "heated front seats", "heated seating",
+    "heated driver seat", "heated passenger seat", "heated seats package"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.comfort]]
+id = "CLD"
+display = "Ventilated Seat"
+value_usd = 200
+value_usd_msrp = 800
+patterns = [
+    "ventilated seats", "cooled seats", "seat ventilation", "ventilated seating",
+    "cooled seating", "ventilated front seats", "seat cooling", "ventilated seats package"
+]
+standard_on_trims = []
+
+# -------------------------
+# Technology Options
+# -------------------------
+
+[[options_v2.catalog.technology]]
+id = "PCM"
+display = "PCM w/ Navigation"
+value_usd = 100
+value_usd_msrp = 3265
+patterns = [
+    "pcm", "navigation", "nav system", "porsche communication management",
+    "pcm navigation", "pcm with navigation", "pcm w/ navigation",
+    "porsche communication management navigation", "pcm system", "navigation system"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.technology]]
+id = "680"
+display = "BOSE Surround Sound"
+value_usd = 400
+value_usd_msrp = 1350
+patterns = [
+    "bose", "bose sound system", "bose audio", "bose surround sound",
+    "bose premium sound", "bose sound", "bose audio system", "bose speakers"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.technology]]
+id = "PARK"
+display = "Park Assist"
+value_usd = 200
+value_usd_msrp = 530
+patterns = [
+    "park assist", "parking assist", "parking sensors", "rear parking sensors",
+    "front parking sensors", "parking aid", "parking assistance", "parking system"
+]
+standard_on_trims = []
+
+# -------------------------
+# Appearance Options
+# -------------------------
+
+[[options_v2.catalog.appearance]]
+id = "BIX"
+display = "Bi-Xenon Headlights with Dynamic Cornering"
+value_usd = 400
+value_usd_msrp = 1360
+patterns = [
+    "bi-xenon", "litronic", "cornering lights", "xenon headlights",
+    "bi-xenon headlights", "dynamic cornering lights", "xenon lighting",
+    "bi-xenon with dynamic cornering", "dynamic cornering", "cornering light system"
+]
+standard_on_trims = []
+
+[[options_v2.catalog.appearance]]
+id = "19W"
+display = "18–19\" Upgraded Wheels"
+value_usd = 800
+value_usd_msrp = 1500
+patterns = [
+    "19\"", "18\"", "235/35r19", "265/35r19", "19 inch", "18 inch",
+    "19 inch wheels", "18 inch wheels", "19\" wheels", "18\" wheels",
+    "upgraded wheels", "larger wheels", "19 inch alloy", "18 inch alloy",
+    "19\" alloy wheels", "18\" alloy wheels"
+]
+standard_on_trims = ["Cayman R"]

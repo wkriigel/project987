@@ -1,0 +1,6 @@
+score_range,count
+Excellent (8000+),0
+Very Good (6000-7999),0
+Good (4000-5999),0
+Fair (2000-3999),0
+Poor (<2000),16

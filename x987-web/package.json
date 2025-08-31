@@ -1,0 +1,28 @@
+{
+  "name": "x987-web",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "dotenv -e .env -- concurrently --continue-on-error \"npm:dev:api\" \"npm:dev:fe:wait\" \"npm:storybook\" \"node scripts/links.js storybook\"",
+    "dev:api": "npm --prefix apps/api run dev",
+    "dev:fe": "npm --prefix apps/fe run dev",
+    "dev:fe:wait": "wait-on http-get://localhost:4000/api/health && npm --prefix apps/fe run dev",
+    "build": "npm --prefix apps/api run build && npm --prefix apps/fe run build",
+    "start": "npm --prefix apps/api run start",
+    "storybook": "npm --prefix apps/fe run storybook",
+    "dev:all:storybook": "npm run dev",
+    "dev:lite": "dotenv -e .env -- concurrently --continue-on-error \"npm:dev:api\" \"npm:dev:fe:wait\"",
+    "dev:all": "dotenv -e .env -- concurrently --continue-on-error \"npm:dev:api\" \"npm:dev:fe:wait\" \"npm:storybook\""
+    ,
+    "test": "npm --prefix apps/api run test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.25.9",
+    "dotenv-cli": "^7.4.2",
+    "wait-on": "^7.2.0"
+  }
+}

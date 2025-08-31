@@ -1,0 +1,21 @@
+source_url,raw_text,extraction_timestamp,year,price,mileage,model_trim,exterior_color,interior_color,source,fair_value_usd,fair_value_calculation,asking_price_usd,deal_delta_usd,deal_percentage,deal_quality
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,"
+        Vehicle: 2010 Porsche Cayman
+        Price: $35,000
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",2025-08-25T16:19:43.307658,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,30500,"{'base_value': 30500, 'year_adjustment': 0, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 0, 'calculation_timestamp': '2025-08-25T16:19:43.331299'}",,,,Unknown

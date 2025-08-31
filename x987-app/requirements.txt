@@ -1,0 +1,17 @@
+# View-from-CSV v4.5 Requirements
+# Core dependencies for Porsche 987.2 listing analyzer
+
+# Web scraping automation
+playwright>=1.40.0
+
+# Terminal formatting and UI
+rich>=13.0.0
+
+# TOML configuration parsing (for Python < 3.11)
+tomli>=2.0.0; python_version < "3.11"
+
+# Optional: Memory monitoring (for debugging)
+# psutil>=5.9.0
+
+# HTML parsing for sample testing
+beautifulsoup4>=4.12.0

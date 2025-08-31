@@ -1,0 +1,13 @@
+source_url,year,model,fair_value_usd,asking_price_usd,deal_delta_usd,deal_quality,timestamp
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,31500,29999,1501,Excellent Deal,2025-08-28T13:27:16.236748
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,31500,24998,6502,Excellent Deal,2025-08-28T13:27:16.236765
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2012,,29500,42997,-13497,Overpriced,2025-08-28T13:27:16.236777
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2009,,32200,36981,-4781,Overpriced,2025-08-28T13:27:16.236787
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2009,,30500,32996,-2496,Overpriced,2025-08-28T13:27:16.236797
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2009,,32000,37995,-5995,Overpriced,2025-08-28T13:27:16.236806
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2009,,30500,32987,-2487,Overpriced,2025-08-28T13:27:16.236815
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2009,,32000,35495,-3495,Overpriced,2025-08-28T13:27:16.236824
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,31000,30900,100,Good Deal,2025-08-28T13:27:16.236834
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,32700,41000,-8300,Overpriced,2025-08-28T13:27:16.236844
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2011,,30700,43973,-13273,Overpriced,2025-08-28T13:27:16.236853
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,2009,,30700,14995,15705,Excellent Deal,2025-08-28T13:27:16.236862

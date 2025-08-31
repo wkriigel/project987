@@ -1,0 +1,7 @@
+listing_id,source_url,extraction_timestamp,detection_timestamp,data_quality_score,year,year_confidence,price,price_confidence,mileage,mileage_confidence,model_trim,model_trim_confidence,exterior_color,interior_color,exterior_color_confidence,interior_color_confidence,source,source_confidence,total_options,total_options_value,options_categories,options_list
+1,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2025-08-25T17:58:40.188848,2025-08-25T17:58:40.203033,1.0,2010,1.0,"$35,000",1.0,"45,000",1.0,Cayman Base,1.0,"Guards Red
+        Interior Color","Black
+        Transmission",1.0,1.0,AutoTempest,1.0,0,3550,"technology, seating, convenience, performance","BOSE Surround Sound, Heated Seats, Park Assist, PASM, PCM w/ Navigation, Sport Chrono Package Plus, Sport Exhaust (PSE)"
+2,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2025-08-25T17:58:40.189146,2025-08-25T17:58:40.203874,1.0,2011,1.0,"$38,500",1.0,"45,000",1.0,Cayman S,1.0,"Guards Red
+        Interior Color","Black
+        Transmission",1.0,1.0,AutoTempest,1.0,0,3550,"technology, seating, convenience, performance","BOSE Surround Sound, Heated Seats, Park Assist, PASM, PCM w/ Navigation, Sport Chrono Package Plus, Sport Exhaust (PSE)"

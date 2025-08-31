@@ -1,0 +1,3 @@
+source_url,price,price_confidence,extraction_timestamp,data_quality_score
+https://example.com,"$35,000",1.0,2025-08-25T16:34:26.024689,1.0
+https://example.com,"$38,500",1.0,2025-08-25T16:34:26.025336,1.0

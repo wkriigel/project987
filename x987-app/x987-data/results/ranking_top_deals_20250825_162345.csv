@@ -1,0 +1,8 @@
+category,source_url,year,model,price,deal_delta_usd,composite_score,rank
+overall_top_5_1,https://example.com/listing2,2011,Cayman S,"$38,500",1000,1124.91,1
+overall_top_5_2,https://example.com/listing1,2010,Cayman,"$35,000",3000,825.6,2
+overall_top_5_3,https://example.com/listing3,2009,Cayman,"$32,000",2000,724.09,3
+best_deal,https://example.com/listing1,2010,Cayman,"$35,000",3000,825.6,2
+best_manual,https://example.com/listing1,2010,Cayman,"$35,000",3000,825.6,2
+best_automatic,https://example.com/listing2,2011,Cayman S,"$38,500",1000,1124.91,1
+best_value,https://example.com/listing2,2011,Cayman S,"$38,500",1000,1124.91,1

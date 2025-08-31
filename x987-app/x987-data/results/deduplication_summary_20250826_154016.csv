@@ -1,0 +1,6 @@
+metric,value,timestamp
+original_count,16,20250826_154016
+final_count,16,20250826_154016
+duplicates_removed,0,20250826_154016
+duplicate_rate,0.0,20250826_154016
+retention_rate,1.0,20250826_154016

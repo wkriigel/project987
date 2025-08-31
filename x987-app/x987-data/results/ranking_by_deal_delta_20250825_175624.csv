@@ -1,0 +1,45 @@
+source_url,raw_text,extraction_timestamp,year,year_confidence,price,price_confidence,mileage,mileage_confidence,model_trim,model_trim_confidence,exterior_color,exterior_color_confidence,interior_color,interior_color_confidence,source,source_confidence,extraction_method,data_quality_score,fair_value_usd,fair_value_calculation,asking_price_usd,deal_delta_usd,deal_percentage,deal_quality,composite_score,ranking_timestamp,rank
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,"
+        Vehicle: 2011 Porsche Cayman S
+        Price: $38,500
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",2025-08-25T17:56:23.992707,2011,1.0,"$38,500",1.0,"45,000",1.0,Cayman S,1.0,"Guards Red
+        Interior Color",1.0,"Black
+        Transmission",1.0,AutoTempest,1.0,unified_extractor,1.0,31700,"{'base_value': 30500, 'year_adjustment': 500, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 700, 'calculation_timestamp': '2025-08-25T17:56:24.021055'}",38500,6800,21.451104100946374,Overpriced,705.61,2025-08-25T17:56:24.024258,1
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,"
+        Vehicle: 2010 Porsche Cayman
+        Price: $35,000
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",2025-08-25T17:56:23.992381,2010,1.0,"$35,000",1.0,"45,000",1.0,Cayman Base,1.0,"Guards Red
+        Interior Color",1.0,"Black
+        Transmission",1.0,AutoTempest,1.0,unified_extractor,1.0,32200,"{'base_value': 30500, 'year_adjustment': 1000, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 700, 'calculation_timestamp': '2025-08-25T17:56:24.020740'}",35000,2800,8.695652173913043,Overpriced,305.6,2025-08-25T17:56:24.024248,2

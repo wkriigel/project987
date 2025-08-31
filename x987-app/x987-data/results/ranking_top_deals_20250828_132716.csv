@@ -1,0 +1,8 @@
+category,source_url,year,model,price,deal_delta_usd,composite_score,rank
+overall_top_5_1,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,2009,,"$14,995",15705,1590.2283,1
+overall_top_5_2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,"$24,998",6502,670.3000000000001,2
+overall_top_5_3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,"$29,999",1501,170.2,3
+overall_top_5_4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2010,,"$30,900",100,33.971900000000005,4
+overall_top_5_5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,2009,,"$32,987",-2487,-227.86,5
+best_deal,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,2009,,"$14,995",15705,1590.2283,1
+best_value,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,2009,,"$14,995",15705,1590.2283,1

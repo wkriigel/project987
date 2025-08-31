@@ -1,0 +1,101 @@
+{
+  "source": "cars_com",
+  "sample_file": "samples\\cars_com\\sample.html",
+  "test_timestamp": 1756059347.492547,
+  "extraction_tests": {
+    "title": {
+      "techniques": {
+        "h1[data-testid='vehicle-title']": {
+          "found": true,
+          "text": "2010 Porsche 987.2 Cayman S",
+          "length": 27,
+          "html": "<h1 data-testid=\"vehicle-title\">2010 Porsche 987.2 Cayman S</h1>"
+        },
+        "h1.vehicle-title": {
+          "found": true,
+          "text": "2010 Porsche 987.2 Cayman S",
+          "length": 27,
+          "html": "<h1 data-testid=\"vehicle-title\">2010 Porsche 987.2 Cayman S</h1>"
+        },
+        "h1.spark-heading-2": {
+          "found": true,
+          "text": "2010 Porsche 987.2 Cayman S",
+          "length": 27,
+          "html": "<h1 data-testid=\"vehicle-title\">2010 Porsche 987.2 Cayman S</h1>"
+        },
+        ".vehicle-title": {
+          "found": false,
+          "text": null,
+          "length": 0,
+          "html": null
+        },
+        "h1": {
+          "found": true,
+          "text": "2010 Porsche 987.2 Cayman S",
+          "length": 27,
+          "html": "<h1 data-testid=\"vehicle-title\">2010 Porsche 987.2 Cayman S</h1>"
+        }
+      },
+      "best_result": "h1[data-testid='vehicle-title']",
+      "recommendations": []
+    },
+    "overview": {
+      "found": true,
+      "sections": {
+        "title": true,
+        "price": true,
+        "basic": true,
+        "features": true
+      },
+      "content": "Title Section: 2010 Porsche 987.2 Cayman SPremium Sports Car with Advanced Features\nPrice Section: Price:$32,500MSRP:$35,000Savings:$2,500\nBasic Section: Mileage:45,000 milesVIN:WP0AB2A90AS123456Transmission:ManualExterior Color:Arctic Silver MetallicInterior Color:BlackEngine:3.4L Flat-6Drivetrain:Rear-Wheel Drive\nFeatures Section: Features & OptionsSport Chrono PackagePremium Package Plus19\" Sport WheelsSport Exhaust SystemNavigation SystemBluetooth ConnectivityHeated SeatsPremium Audio System\n",
+      "score": 100
+    },
+    "fields": {
+      "mileage": {
+        "found": true,
+        "value": 45000,
+        "techniques": {
+          "basic-section": {
+            "found": true,
+            "text": "Mileage:45,000 milesVIN:WP0AB2A90AS123456Transmission:ManualExterior Color:Arctic Silver MetallicInterior Color:BlackEngine:3.4L Flat-6Drivetrain:Rear-Wheel Drive",
+            "value": 45000
+          }
+        },
+        "recommendations": [
+          "Mileage successfully extracted from basic section"
+        ]
+      },
+      "vin": {
+        "found": true,
+        "value": "WP0AB2A90AS123456",
+        "techniques": {
+          "basic-section": {
+            "found": true,
+            "text": "Mileage:45,000 milesVIN:WP0AB2A90AS123456Transmission:ManualExterior Color:Arctic Silver MetallicInterior Color:BlackEngine:3.4L Flat-6Drivetrain:Rear-Wheel Drive",
+            "value": "WP0AB2A90AS123456"
+          }
+        },
+        "recommendations": [
+          "VIN successfully extracted from basic section"
+        ]
+      },
+      "transmission": {
+        "found": true,
+        "value": "Manual",
+        "techniques": {
+          "basic-section": {
+            "found": true,
+            "text": "Mileage:45,000 milesVIN:WP0AB2A90AS123456Transmission:ManualExterior Color:Arctic Silver MetallicInterior Color:BlackEngine:3.4L Flat-6Drivetrain:Rear-Wheel Drive",
+            "value": "Manual"
+          }
+        },
+        "recommendations": [
+          "Transmission successfully extracted from basic section"
+        ]
+      }
+    }
+  },
+  "recommendations": [
+    "Use 'h1[data-testid='vehicle-title']' for title extraction"
+  ]
+}

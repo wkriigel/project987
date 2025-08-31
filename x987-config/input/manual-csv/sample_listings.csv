@@ -1,0 +1,16 @@
+source,listing_url,title,year,transmission,mileage,price,exterior_color,interior_color,options,vin,location
+cars.com,https://example.com/1,2009 Porsche Cayman S,2009,Automatic,45000,35000,Arctic Silver Metallic,Black,Premium Package Sport Chrono Package,WP0AB2A89EK123456,New York
+cars.com,https://example.com/2,2010 Porsche Cayman Base,2010,Manual,60000,32000,Black,Tan,Sport Package,WP0AB2A89EK789012,California
+cars.com,https://example.com/3,2011 Porsche Boxster S,2011,Automatic,35000,45000,Guards Red,Black,Premium Package Plus Sport Chrono,WP0AB2A89EK345678,Florida
+cars.com,https://example.com/4,2009 Porsche Boxster Base,2009,Manual,75000,28000,White,Black,None,WP0AB2A89EK456789,Texas
+cars.com,https://example.com/5,2012 Porsche Cayman S,2012,Automatic,25000,52000,GT Silver Metallic,Tan,Premium Package Sport Chrono Sport Exhaust,WP0AB2A89EK567890,Illinois
+cars.com,https://example.com/6,2010 Porsche Boxster S,2010,Automatic,55000,38000,Basalt Black Metallic,Black,Premium Package Sport Chrono,WP0AB2A89EK678901,Michigan
+cars.com,https://example.com/7,2011 Porsche Cayman Base,2011,Manual,40000,36000,Platinum Silver Metallic,Tan,Sport Package,WP0AB2A89EK789012,Ohio
+cars.com,https://example.com/8,2009 Porsche Boxster S,2009,Automatic,65000,32000,Speed Yellow,Black,Premium Package Plus Sport Chrono,WP0AB2A89EK890123,Pennsylvania
+cars.com,https://example.com/9,2012 Porsche Cayman S,2012,Manual,30000,48000,Macadamia Metallic,Tan,Premium Package Sport Chrono Sport Exhaust,WP0AB2A89EK901234,Virginia
+cars.com,https://example.com/10,2010 Porsche Boxster Base,2010,Automatic,70000,30000,Seal Grey,Black,None,WP0AB2A89EK012345,North Carolina
+cars.com,https://example.com/11,2011 Porsche Cayman S,2011,Automatic,28000,47000,Guards Red,Black,Premium Package Plus Sport Chrono Sport Exhaust,WP0AB2A89EK123456,Georgia
+cars.com,https://example.com/12,2009 Porsche Cayman Base,2009,Manual,80000,26000,White,Tan,Sport Package,WP0AB2A89EK234567,South Carolina
+cars.com,https://example.com/13,2012 Porsche Boxster S,2012,Automatic,20000,54000,GT Silver Metallic,Black,Premium Package Sport Chrono,WP0AB2A89EK345678,Tennessee
+cars.com,https://example.com/14,2010 Porsche Cayman S,2010,Manual,50000,42000,Basalt Black Metallic,Tan,Premium Package Sport Chrono Sport Exhaust,WP0AB2A89EK456789,Kentucky
+cars.com,https://example.com/15,2011 Porsche Boxster Base,2011,Automatic,45000,34000,Platinum Silver Metallic,Black,Sport Package,WP0AB2A89EK567890,Indiana

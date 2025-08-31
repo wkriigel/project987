@@ -1,0 +1,79 @@
+collection_timestamp,extracted_data,listing_url,model,preparation_timestamp,price,raw_html,raw_text,scraping_id,scraping_metadata,scraping_status,scraping_timestamp,source_url,title,validation_score,validation_status,year
+2025-08-25T17:56:50.010445,"{'year': '2010', 'make': 'Porsche', 'model': 'Cayman', 'price': '$35,000', 'mileage': '45,000', 'exterior_color': 'Guards Red', 'interior_color': 'Black', 'transmission': 'Manual', 'vin': 'WP0AB2A91AK123456', 'location': 'Atlanta, GA', 'dealer': 'Porsche Atlanta'}",https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214#listing1,Cayman,2025-08-25T17:56:50.013516,"$35,000","<html><body>
+        Vehicle: 2010 Porsche Cayman
+        Price: $35,000
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        </body></html>","
+        Vehicle: 2010 Porsche Cayman
+        Price: $35,000
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",1,"{'method': 'mock', 'headful': False, 'processing_time_ms': 500}",success,2025-08-25T17:56:50.514126,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,Mock Vehicle Listing 1,1.0,valid,2010
+2025-08-25T17:56:50.010450,"{'year': '2011', 'make': 'Porsche', 'model': 'Cayman S', 'price': '$38,500', 'mileage': '45,000', 'exterior_color': 'Guards Red', 'interior_color': 'Black', 'transmission': 'Manual', 'vin': 'WP0AB2A91AK123456', 'location': 'Atlanta, GA', 'dealer': 'Porsche Atlanta'}",https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214#listing2,Cayman S,2025-08-25T17:56:50.013524,"$38,500","<html><body>
+        Vehicle: 2011 Porsche Cayman S
+        Price: $38,500
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        </body></html>","
+        Vehicle: 2011 Porsche Cayman S
+        Price: $38,500
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",2,"{'method': 'mock', 'headful': False, 'processing_time_ms': 500}",success,2025-08-25T17:56:52.016133,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,Mock Vehicle Listing 2,1.0,valid,2011

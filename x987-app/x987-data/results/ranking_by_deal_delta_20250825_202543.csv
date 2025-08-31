@@ -1,0 +1,29 @@
+source_url,raw_text,extraction_timestamp,year,year_confidence,price,price_confidence,mileage,mileage_confidence,model_trim,model_trim_confidence,exterior_color,exterior_color_confidence,interior_color,interior_color_confidence,source,source_confidence,extraction_method,data_quality_score,fair_value_usd,fair_value_calculation,asking_price_usd,deal_delta_usd,deal_percentage,deal_quality,composite_score,ranking_timestamp,rank
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,"
+        Vehicle: Min Year                
+                
+            
+            
+                
+                    Max Year Porsche Cayman
+        Price: $42,997
+ Fair Deal
+        Mileage: 45,000 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK123456
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Sport Chrono Package
+        - PASM Sport Suspension
+        - Sport Exhaust System
+        - Bose Surround Sound
+        - Navigation System
+        - Heated Seats
+        - Park Assist
+        ",2025-08-25T20:25:43.087349,Unknown,0.0,"$42,997",1.0,"45,000",1.0,Cayman Base,1.0,"Guards Red
+        Interior Color",1.0,"Black
+        Transmission",1.0,AutoTempest,1.0,unified_extractor,0.8571428571428571,31200,"{'base_value': 30500, 'year_adjustment': 0, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 700, 'calculation_timestamp': '2025-08-25T20:25:43.111034'}",42997,11797,37.81089743589743,Overpriced,1185.2,2025-08-25T20:25:43.112831,1

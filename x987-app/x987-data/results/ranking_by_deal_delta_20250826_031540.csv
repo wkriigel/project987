@@ -1,0 +1,200 @@
+listing_url,source_url,raw_text,extraction_timestamp,year,year_confidence,price,price_confidence,mileage,mileage_confidence,model_trim,model_trim_confidence,exterior_color,exterior_color_confidence,interior_color,interior_color_confidence,source,source_confidence,extraction_method,data_quality_score,fair_value_usd,fair_value_calculation,asking_price_usd,deal_delta_usd,deal_percentage,deal_quality,composite_score,ranking_timestamp,rank
+https://www.cars.com/vehicledetail/dccb8902-a155-44e3-bf33-6f563cb8bb77/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2011 Porsche Cayman
+        Price: $44,426
+        Mileage: 49,426 miles
+        Exterior Color: White
+        Interior Color: Silver
+        Transmission: Manual
+        VIN: WP0AB2A91AK919426
+        Location: Los Angeles, CA
+        Dealer: Porsche Beverly Hills
+        
+        Features:
+        - Sport Exhaust System
+- Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+- Premium Package
+- Sport Seats
+        ",2025-08-26T03:15:40.054956,2011,1.0,"$44,426",1.0,"49,426",1.0,Unknown,0.0,White,1.0,Silver,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,31200,"{'base_value': 30500, 'year_adjustment': 500, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 200, 'calculation_timestamp': '2025-08-26T03:15:40.083918'}",44426,13226,42.39102564102564,Overpriced,1347.7674,2025-08-26T03:15:40.087212,1
+https://www.cars.com/vehicledetail/00913ac2-c363-4c68-be09-13193ee12b64/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2012 Porsche Cayman
+        Price: $43,463
+        Mileage: 48,463 miles
+        Exterior Color: Orange
+        Interior Color: Guards Red
+        Transmission: Automatic
+        VIN: WP0AB2A91AK418463
+        Location: Seattle, WA
+        Dealer: Porsche Seattle
+        
+        Features:
+        - Bluetooth Connectivity
+- Sport Chrono Package
+- PASM Sport Suspension
+- Sport Exhaust System
+- Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+        ",2025-08-26T03:15:40.055200,2012,1.0,"$43,463",1.0,"48,463",1.0,Unknown,0.0,Orange,1.0,Guards Red,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,30800,"{'base_value': 30500, 'year_adjustment': 0, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 300, 'calculation_timestamp': '2025-08-26T03:15:40.084652'}",43463,12663,41.11363636363636,Overpriced,1291.5737000000001,2025-08-26T03:15:40.087236,2
+https://www.cars.com/vehicledetail/bef1535e-4d4d-481e-8ca8-4e69dd69d141/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2011 Porsche Cayman
+        Price: $39,242
+        Mileage: 54,242 miles
+        Exterior Color: White
+        Interior Color: Silver
+        Transmission: Manual
+        VIN: WP0AB2A91AK674242
+        Location: Atlanta, GA
+        Dealer: Porsche Atlanta
+        
+        Features:
+        - Park Assist
+- Premium Package
+- Sport Seats
+- 18"" Wheels
+- Bi-Xenon Headlights
+- Bluetooth Connectivity
+- Sport Chrono Package
+        ",2025-08-26T03:15:40.055069,2011,1.0,"$39,242",1.0,"54,242",1.0,Unknown,0.0,White,1.0,Silver,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,30700,"{'base_value': 30500, 'year_adjustment': 500, 'model_premium': 0, 'mileage_adjustment': -500, 'color_premium': 200, 'calculation_timestamp': '2025-08-26T03:15:40.084339'}",39242,8542,27.824104234527685,Overpriced,878.8858,2025-08-26T03:15:40.087229,3
+https://www.cars.com/vehicledetail/c2112af7-00a0-49bf-9278-d9e6f627d93e/?aff=atempst&utm_campaign=atempst&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2010 Porsche Cayman
+        Price: $39,213
+        Mileage: 44,213 miles
+        Exterior Color: Green
+        Interior Color: Yellow
+        Transmission: Automatic
+        VIN: WP0AB2A91AK814213
+        Location: New York, NY
+        Dealer: Porsche Manhattan
+        
+        Features:
+        - PASM Sport Suspension
+- Sport Exhaust System
+- Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+        ",2025-08-26T03:15:40.055289,2010,1.0,"$39,213",1.0,"44,213",1.0,Unknown,0.0,Green,1.0,Yellow,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,31500,"{'base_value': 30500, 'year_adjustment': 1000, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 0, 'calculation_timestamp': '2025-08-26T03:15:40.085023'}",39213,7713,24.485714285714284,Overpriced,796.9787000000001,2025-08-26T03:15:40.087246,4
+https://www.cars.com/vehicledetail/9887f1df-72af-47b2-b670-d9ef90a28773/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2012 Porsche Cayman
+        Price: $31,755
+        Mileage: 66,755 miles
+        Exterior Color: Silver
+        Interior Color: Blue
+        Transmission: Automatic
+        VIN: WP0AB2A91AK586755
+        Location: Seattle, WA
+        Dealer: Porsche Seattle
+        
+        Features:
+        - Bluetooth Connectivity
+- Sport Chrono Package
+- PASM Sport Suspension
+- Sport Exhaust System
+- Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+        ",2025-08-26T03:15:40.055005,2012,1.0,"$31,755",1.0,"66,755",1.0,Unknown,0.0,Silver,1.0,Blue,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,30000,"{'base_value': 30500, 'year_adjustment': 0, 'model_premium': 0, 'mileage_adjustment': -500, 'color_premium': 0, 'calculation_timestamp': '2025-08-26T03:15:40.084105'}",31755,1755,5.8500000000000005,Overpriced,198.9445,2025-08-26T03:15:40.087221,5
+https://www.ebay.com/itm/306463169067?hash=item475aa0da2b%3Ag%3ABv4AAOSwQS9oWly0&mkevt=1&mkcid=1&mkrid=711-53200-19255-0&campid=5337650957&customid=&toolid=10049,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2012 Porsche Cayman
+        Price: $30,871
+        Mileage: 75,871 miles
+        Exterior Color: Orange
+        Interior Color: Guards Red
+        Transmission: Automatic
+        VIN: WP0AB2A91AK645871
+        Location: New York, NY
+        Dealer: Porsche Manhattan
+        
+        Features:
+        - Premium Package
+- Sport Seats
+- 18"" Wheels
+- Bi-Xenon Headlights
+- Bluetooth Connectivity
+- Sport Chrono Package
+- PASM Sport Suspension
+- Sport Exhaust System
+        ",2025-08-26T03:15:40.055318,2012,1.0,"$30,871",1.0,"75,871",1.0,Unknown,0.0,Orange,1.0,Guards Red,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,29300,"{'base_value': 30500, 'year_adjustment': 0, 'model_premium': 0, 'mileage_adjustment': -1500, 'color_premium': 300, 'calculation_timestamp': '2025-08-26T03:15:40.085145'}",30871,1571,5.361774744027304,Overpriced,179.63290000000003,2025-08-26T03:15:40.087250,6
+https://www.cars.com/vehicledetail/5478a97d-5d9b-4b8c-9063-147503a1631e/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2010 Porsche Cayman
+        Price: $30,937
+        Mileage: 75,937 miles
+        Exterior Color: Black
+        Interior Color: White
+        Transmission: Automatic
+        VIN: WP0AB2A91AK045937
+        Location: New York, NY
+        Dealer: Porsche Manhattan
+        
+        Features:
+        - PASM Sport Suspension
+- Sport Exhaust System
+- Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+        ",2025-08-26T03:15:40.055261,2010,1.0,"$30,937",1.0,"75,937",1.0,Unknown,0.0,Black,1.0,White,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,30300,"{'base_value': 30500, 'year_adjustment': 1000, 'model_premium': 0, 'mileage_adjustment': -1500, 'color_premium': 300, 'calculation_timestamp': '2025-08-26T03:15:40.084918'}",30937,637,2.102310231023102,Fair Price,86.20630000000001,2025-08-26T03:15:40.087243,7
+https://www.cars.com/vehicledetail/9911a576-8804-4fd7-a62d-61ca63768259/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2009 Porsche Cayman
+        Price: $32,536
+        Mileage: 37,536 miles
+        Exterior Color: Guards Red
+        Interior Color: Black
+        Transmission: Manual
+        VIN: WP0AB2A91AK707536
+        Location: Miami, FL
+        Dealer: Porsche Miami
+        
+        Features:
+        - Navigation System
+- Heated Seats
+- Park Assist
+- Premium Package
+- Sport Seats
+        ",2025-08-26T03:15:40.055039,2009,1.0,"$32,536",1.0,"37,536",1.0,Unknown,0.0,Unknown,0.0,Unknown,0.0,Unknown,1.0,pre_extracted_data,0.42857142857142855,32000,"{'base_value': 30500, 'year_adjustment': 1500, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 0, 'calculation_timestamp': '2025-08-26T03:15:40.084215'}",32536,536,1.675,Fair Price,79.93639999999999,2025-08-26T03:15:40.087225,8
+https://www.cars.com/vehicledetail/571de632-1f0c-428d-808c-a1e93e992e13/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2012 Porsche Cayman
+        Price: $30,951
+        Mileage: 45,951 miles
+        Exterior Color: Orange
+        Interior Color: Guards Red
+        Transmission: Automatic
+        VIN: WP0AB2A91AK765951
+        Location: Chicago, IL
+        Dealer: Porsche Chicago
+        
+        Features:
+        - Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+- Premium Package
+- Sport Seats
+- 18"" Wheels
+- Bi-Xenon Headlights
+        ",2025-08-26T03:15:40.055233,2012,1.0,"$30,951",1.0,"45,951",1.0,Unknown,0.0,Orange,1.0,Guards Red,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,30800,"{'base_value': 30500, 'year_adjustment': 0, 'model_premium': 0, 'mileage_adjustment': 0, 'color_premium': 300, 'calculation_timestamp': '2025-08-26T03:15:40.084778'}",30951,151,0.49025974025974023,Fair Price,40.6249,2025-08-26T03:15:40.087240,9
+https://www.cars.com/vehicledetail/d58b0ed4-43af-43c6-aec4-1fec0d7b3dfc/?aff=atempest&utm_campaign=atempest&utm_source=autotempest&utm_medium=trp&utm_campaign_id=1&utm_trusted=TRUE,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2012&model=boxster&transmission=auto&zip=30214https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,"
+        Vehicle: 2010 Porsche Cayman
+        Price: $28,773
+        Mileage: 53,773 miles
+        Exterior Color: Green
+        Interior Color: Yellow
+        Transmission: Automatic
+        VIN: WP0AB2A91AK623773
+        Location: New York, NY
+        Dealer: Porsche Manhattan
+        
+        Features:
+        - PASM Sport Suspension
+- Sport Exhaust System
+- Bose Surround Sound
+- Navigation System
+- Heated Seats
+- Park Assist
+        ",2025-08-26T03:15:40.055120,2010,1.0,"$28,773",1.0,"53,773",1.0,Unknown,0.0,Green,1.0,Yellow,1.0,Unknown,1.0,pre_extracted_data,0.7142857142857143,31000,"{'base_value': 30500, 'year_adjustment': 1000, 'model_premium': 0, 'mileage_adjustment': -500, 'color_premium': 0, 'calculation_timestamp': '2025-08-26T03:15:40.084457'}",28773,-2227,-7.183870967741936,Excellent Deal,-197.9773,2025-08-26T03:15:40.087233,10

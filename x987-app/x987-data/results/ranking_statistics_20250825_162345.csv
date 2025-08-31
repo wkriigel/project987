@@ -1,0 +1,10 @@
+metric,value
+avg_deal_delta,2000.0
+best_deal_delta,3000
+worst_deal_delta,1000
+automatic_percentage,0.3333333333333333
+manual_percentage,0.6666666666666666
+avg_composite_score,891.5333333333334
+total_listings,3
+automatic_listings,1
+manual_listings,2
