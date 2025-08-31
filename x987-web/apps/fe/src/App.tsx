@@ -47,62 +47,73 @@ export function App() {
 
   const columns: ColumnsType<RankingRecord> = useMemo(() => [
     {
-      title: 'Year/Model/Trim',
-      key: 'model',
+      title: 'Year',
+      key: 'year',
+      width: 90,
       sorter: (a,b) => (toInt(a.year)||0) - (toInt(b.year)||0),
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
+        const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { min?: number; max?: number }
+        return (
+          <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+            <InputNumber
+              placeholder="Min"
+              value={curr.min}
+              onChange={(val) => { const next = { ...curr, min: val == null ? undefined : Number(val) }; setSelectedKeys([JSON.stringify(next)]); confirm({ closeDropdown: false }) }}
+              style={{ width: 120, marginBottom: 8, display: 'block' }}
+            />
+            <InputNumber
+              placeholder="Max"
+              value={curr.max}
+              onChange={(val) => { const next = { ...curr, max: val == null ? undefined : Number(val) }; setSelectedKeys([JSON.stringify(next)]); confirm({ closeDropdown: false }) }}
+              style={{ width: 120, marginBottom: 8, display: 'block' }}
+            />
+            <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
+          </div>
+        )
+      },
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>🗓️</span>),
+      onFilter: (value, rec) => {
+        let range: { min?: number; max?: number } = {}
+        try { range = JSON.parse(String(value)) } catch {}
+        const v = toInt(rec.year)
+        if (v == null) return false
+        if (range.min != null && v < range.min) return false
+        if (range.max != null && v > range.max) return false
+        return true
+      },
+      render: (_, r) => {
+        const y = toInt(r.year)
+        const dimYear = isEarlyYearDim(r)
+        return <Chip text={y ?? ''} dim={dimYear} />
+      }
+    },
+    {
+      title: 'Model/Trim',
+      key: 'modeltrim',
+      sorter: (a,b) => (normalizeModelTrim(a.model_trim) || '').localeCompare(normalizeModelTrim(b.model_trim) || ''),
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
         <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
           <Input
             ref={ymtInputRef}
-            placeholder="Search year/model/trim"
+            placeholder="Search model/trim"
             value={(selectedKeys as React.Key[])[0] as string}
-            onChange={(e) => {
-              const val = e.target.value
-              setSelectedKeys(val ? [val] : [])
-              confirm({ closeDropdown: false })
-            }}
+            onChange={(e) => { const val = e.target.value; setSelectedKeys(val ? [val] : []); confirm({ closeDropdown: false }) }}
             onPressEnter={() => confirm()}
             style={{ marginBottom: 8, display: 'block' }}
           />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <a
-              onClick={() => {
-                clearFilters && clearFilters()
-                confirm()
-              }}
-            >
-              Reset
-            </a>
-          </div>
+          <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
         </div>
       ),
-      filterIcon: (filtered: boolean) => (
-        <span style={{ color: filtered ? '#1677ff' : undefined }}>🔎</span>
-      ),
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>🔎</span>),
       onFilter: (value, rec) => {
-        const y = toInt(rec.year)
         const mt = normalizeModelTrim(rec.model_trim)
-        const s = `${y ?? ''} ${mt ?? ''} ${rec.model_trim ?? ''}`.toLowerCase()
+        const s = `${mt ?? ''} ${rec.model_trim ?? ''}`.toLowerCase()
         return s.includes(String(value).toLowerCase())
       },
-      // uncontrolled: let Table manage filter state via selectedKeys
-      onFilterDropdownOpenChange: (open) => {
-        if (open) {
-          setTimeout(() => ymtInputRef.current?.select(), 100)
-        }
-      },
+      onFilterDropdownOpenChange: (open) => { if (open) setTimeout(() => ymtInputRef.current?.select(), 100) },
       render: (_, r) => {
-        const y = toInt(r.year)
-        const mt = normalizeModelTrim(r.model_trim)
-        const dimYear = isEarlyYearDim(r)
-        const hl = isModelCellHighlighted(r)
-        const cellStyle: React.CSSProperties = hl ? { backgroundColor: roles.bg.emphasis as string } : {}
-        return (
-          <span style={cellStyle} className="px-1 rounded inline-flex items-center gap-1">
-            <Chip text={y ?? ''} dim={dimYear} />
-            {mt && <span className="text-xs md:text-sm">{mt}</span>}
-          </span>
-        )
+        const mt = normalizeModelTrim(r.model_trim || `${r.model || ''} ${r.trim || ''}`)
+        return <span className="text-xs md:text-sm">{mt}</span>
       }
     },
     {
@@ -324,30 +335,36 @@ export function App() {
       render: (_, r) => optionsCompact(r.options_list)
     },
     {
-      title: 'Colors',
-      key: 'colors',
+      title: 'Exterior',
+      key: 'exterior',
       render: (_, r) => {
         const exInfo = extractPaintFromRecord('exterior', r)
-        const inInfo = extractPaintFromRecord('interior', r)
         const exName = (exInfo.name as any) || ''
+        return (
+          <PaintChipExterior
+            name={exName}
+            hex={exInfo.hex}
+            label={exName || exInfo.hex || '—'}
+            size="md"
+            className="w-full min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
+          />
+        )
+      }
+    },
+    {
+      title: 'Interior',
+      key: 'interior',
+      render: (_, r) => {
+        const inInfo = extractPaintFromRecord('interior', r)
         const inName = (inInfo.name as any) || ''
         return (
-          <div className="flex items-stretch gap-1 w-full">
-            <PaintChipExterior
-              name={exName}
-              hex={exInfo.hex}
-              label={exName || exInfo.hex || '—'}
-              size="md"
-              className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
-            />
-            <PaintChipInterior
-              name={inName}
-              hex={inInfo.hex}
-              label={inName || inInfo.hex || '—'}
-              size="md"
-              className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
-            />
-          </div>
+          <PaintChipInterior
+            name={inName}
+            hex={inInfo.hex}
+            label={inName || inInfo.hex || '—'}
+            size="md"
+            className="w-full min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
+          />
         )
       }
     },
