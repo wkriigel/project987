@@ -1,0 +1,68 @@
+import { Meta, Canvas, Story, Source } from '@storybook/blocks'
+import { FilterSelect } from './FilterSelect'
+
+<Meta title="Inputs/Filters/FilterSelect/Usage" component={FilterSelect} />
+
+# FilterSelect
+
+Generic labeled Select for top-of-table filters. Controlled via `value`/`onChange`, styled with Ant Design + Tailwind, themed via `roles`.
+
+## Usage
+
+<Source
+  code={`import { FilterSelect } from '@/components/FilterSelect'
+
+function Example(){
+  const [value, setValue] = useState('all')
+  return (
+    <FilterSelect
+      label="Generation"
+      value={value}
+      onChange={(v) => setValue(String(v))}
+      options={[
+        { label: 'All', value: 'all' },
+        { label: '987.1', value: '987.1' },
+        { label: '987.2', value: '987.2' }
+      ]}
+    />
+  )
+}
+`} language="tsx" />
+
+## States
+
+<Canvas>
+  <Story name="Default">
+    {() => (
+      <div style={{ padding: 16, background: '#1F2937', color: '#C9D1D9', borderRadius: 8 }}>
+        <FilterSelect
+          label="Generation"
+          value={'all'}
+          onChange={() => {}}
+          options={[
+            { label: 'All', value: 'all' },
+            { label: '987.1', value: '987.1' },
+            { label: '987.2', value: '987.2' }
+          ]}
+        />
+      </div>
+    )}
+  </Story>
+  <Story name="Disabled">
+    {() => (
+      <div style={{ padding: 16, background: '#1F2937', color: '#C9D1D9', borderRadius: 8 }}>
+        <FilterSelect
+          label="Generation"
+          value={'all'}
+          onChange={() => {}}
+          disabled
+          options={[
+            { label: 'All', value: 'all' },
+            { label: '987.1', value: '987.1' },
+            { label: '987.2', value: '987.2' }
+          ]}
+        />
+      </div>
+    )}
+  </Story>
+</Canvas>

@@ -3,7 +3,7 @@ import { PaintChip, PaintChipExterior, PaintChipInterior } from './PaintChip'
 import { exteriorPaint, interiorPaint } from '../design/paint/colors'
 
 const meta: Meta<typeof PaintChip> = {
-  title: 'Components/PaintChip',
+  title: 'UI/Chips/Chip/PaintChip',
   component: PaintChip,
   tags: ['autodocs'],
   args: {

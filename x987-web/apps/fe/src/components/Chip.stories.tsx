@@ -1,9 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chip } from './Chip'
+import { ThresholdChip } from './ThresholdChip'
+import { PaintChip } from './PaintChip'
 
 const meta: Meta<typeof Chip> = {
-  title: 'Components/Chip',
+  title: 'UI/Chips/Chip',
   component: Chip,
+  subcomponents: { ThresholdChip, PaintChip },
   tags: ['autodocs'],
   args: {
     text: 'Chip',
@@ -28,4 +31,3 @@ export const Medium: Story = {
 export const Colored: Story = {
   args: { bg: '#3A4654', color: '#C9D1D9' }
 }
-
