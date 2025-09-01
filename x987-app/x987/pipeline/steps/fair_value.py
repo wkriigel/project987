@@ -159,9 +159,9 @@ class FairValueStep(BasePipelineStep):
             model = listing.get('model', '')
             trim = listing.get('trim', '')
             mileage = self._extract_mileage(listing.get('mileage', ''))
-            # Colors per schema; accept legacy keys as fallback during transition
-            exterior_color = listing.get('exterior') or listing.get('exterior_color', '')
-            interior_color = listing.get('interior') or listing.get('interior_color', '')
+            # Colors per schema (separate fields)
+            exterior_color = listing.get('exterior', '')
+            interior_color = listing.get('interior', '')
             
             # Calculate base fair value
             fair_value = base_value

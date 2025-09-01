@@ -146,9 +146,8 @@ class DeduplicationStep(BasePipelineStep):
             'listing_url',    # URL should be unique
             'source_url',     # Source + other fields
             'year',           # Year + model + mileage combination
-            'model',          # Prefer separate fields
-            'trim',           # Prefer separate fields
-            'model_trim'      # Legacy combined field (fallback)
+            'model',          # Separate fields
+            'trim'            # Separate fields
         ]
         
         # Find available criteria from priority list
