@@ -157,9 +157,11 @@ class FairValueStep(BasePipelineStep):
             # Extract basic information
             year = self._extract_year(listing.get('year', ''))
             model = listing.get('model', '')
+            trim = listing.get('trim', '')
             mileage = self._extract_mileage(listing.get('mileage', ''))
-            exterior_color = listing.get('exterior_color', '')
-            interior_color = listing.get('interior_color', '')
+            # Colors per schema; accept legacy keys as fallback during transition
+            exterior_color = listing.get('exterior') or listing.get('exterior_color', '')
+            interior_color = listing.get('interior') or listing.get('interior_color', '')
             
             # Calculate base fair value
             fair_value = base_value
@@ -170,10 +172,10 @@ class FairValueStep(BasePipelineStep):
                 fair_value += year_diff * year_step
                 print(f"          📅 Year {year}: ${year_diff * year_step:,} adjustment")
             
-            # Adjust for model (S models get premium)
-            if model and 'S' in model:
+            # Adjust for trim (S trim gets premium)
+            if str(trim).strip().upper() == 'S' or (not trim and model and ' S' in str(model)):
                 fair_value += s_premium
-                print(f"          🚗 Model {model}: ${s_premium:,} S premium")
+                print(f"          🚗 Trim S: ${s_premium:,} premium")
             
             # Adjust for mileage (high mileage gets discount)
             if mileage:
@@ -197,7 +199,7 @@ class FairValueStep(BasePipelineStep):
                 'fair_value_calculation': {
                     'base_value': base_value,
                     'year_adjustment': year_diff * year_step if year else 0,
-                    'model_premium': s_premium if model and 'S' in model else 0,
+                    'model_premium': s_premium if (str(trim).strip().upper() == 'S' or (not trim and model and ' S' in str(model))) else 0,
                     'mileage_adjustment': mileage_discount if mileage else 0,
                     'color_premium': color_premium,
                     'calculation_timestamp': datetime.now().isoformat()
@@ -408,7 +410,8 @@ class FairValueStep(BasePipelineStep):
         
         try:
             with open(summary_filepath, 'w', newline='', encoding='utf-8') as csvfile:
-                fieldnames = ['source_url', 'year', 'model', 'fair_value_usd', 'asking_price_usd', 'deal_delta_usd', 'deal_quality', 'timestamp']
+                # Include trim as separate column for FE consumption
+                fieldnames = ['source_url', 'year', 'model', 'trim', 'fair_value_usd', 'asking_price_usd', 'deal_delta_usd', 'deal_quality', 'timestamp']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 
@@ -417,6 +420,7 @@ class FairValueStep(BasePipelineStep):
                         'source_url': listing.get('source_url', ''),
                         'year': listing.get('year', ''),
                         'model': listing.get('model', ''),
+                        'trim': listing.get('trim', ''),
                         'fair_value_usd': listing.get('fair_value_usd', ''),
                         'asking_price_usd': listing.get('asking_price_usd', ''),
                         'deal_delta_usd': listing.get('deal_delta_usd', ''),

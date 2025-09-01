@@ -126,22 +126,31 @@ def create_main_table(listings: List[NormalizedListing]) -> Table:
             )
         else:
             # Valid listing row
-            model_trim = f"{listing.model} {listing.trim}" if listing.model and listing.trim else "Unknown"
+            # Compose model/trim from separate fields; fallback to legacy combined
+            model_trim = (
+                (f"{listing.model} {listing.trim}".strip() if listing.model else None)
+                or getattr(listing, 'model_trim', None)
+                or "Unknown"
+            )
             year = str(listing.year) if listing.year else "N/A"
             transmission = listing.transmission_norm or "N/A"
             miles = format_mileage_display(listing.mileage) if listing.mileage else "N/A"
-            price = format_price_display(listing.price_usd) if listing.price_usd else "N/A"
+            # Prefer asking_price_usd; allow legacy price_usd
+            price_val = getattr(listing, 'asking_price_usd', None) or getattr(listing, 'price_usd', None)
+            price = format_price_display(price_val) if price_val else "N/A"
             fair_value = format_price_display(listing.fair_value_usd) if listing.fair_value_usd else "N/A"
             deal_delta = format_deal_delta(listing.deal_delta_usd) if listing.deal_delta_usd else "N/A"
             
             # Colors
             colors = ""
-            if listing.exterior_color and listing.interior_color:
-                colors = f"{listing.exterior_color[:8]}/{listing.interior_color[:8]}"
-            elif listing.exterior_color:
-                colors = listing.exterior_color[:12]
-            elif listing.interior_color:
-                colors = listing.interior_color[:12]
+            ext = getattr(listing, 'exterior', None) or getattr(listing, 'exterior_color', None)
+            intr = getattr(listing, 'interior', None) or getattr(listing, 'interior_color', None)
+            if ext and intr:
+                colors = f"{ext[:8]}/{intr[:8]}"
+            elif ext:
+                colors = ext[:12]
+            elif intr:
+                colors = intr[:12]
             else:
                 colors = "N/A"
             

@@ -16,9 +16,9 @@ beforeAll(async () => {
   // Create temp directory with a ranking CSV
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'x987-results-'))
   const csvPath = path.join(tmpDir, 'ranking_main_20250101_000000.csv')
-  const csv = `year,model_trim,asking_price_usd,mileage,total_options_msrp,options_list,listing_url
+  const csv = `year,model,trim,asking_price_usd,mileage,total_options_msrp,options_list,listing_url
 ` +
-              `2010,Cayman S,$35000,52000,5000,"PASM, PSE, LSD",https://example.com/1
+              `2010,Cayman,S,$35000,52000,5000,"PASM, PSE, LSD",https://example.com/1
 `
   fs.writeFileSync(csvPath, csv)
 

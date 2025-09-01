@@ -142,11 +142,13 @@ class DeduplicationStep(BasePipelineStep):
         
         # Priority order for duplicate detection
         priority_criteria = [
-            'vin',  # VIN is the most reliable identifier
-            'listing_url',  # URL should be unique
-            'source_url',  # Source + other fields
-            'year',  # Year + model + mileage combination
-            'model_trim'  # Model + other fields
+            'vin',            # VIN is the most reliable identifier
+            'listing_url',    # URL should be unique
+            'source_url',     # Source + other fields
+            'year',           # Year + model + mileage combination
+            'model',          # Prefer separate fields
+            'trim',           # Prefer separate fields
+            'model_trim'      # Legacy combined field (fallback)
         ]
         
         # Find available criteria from priority list

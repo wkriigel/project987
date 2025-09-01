@@ -14,15 +14,15 @@ Authoritative guidance for clean, extensible CSV output produced by the Python p
 - options_list: string | string[] (comma-separated list ok)
 - exterior: string (raw color name, e.g., "Malachite Green Metallic")
 - interior: string (raw color name, e.g., "Black")
-- exterior_hex: string (optional, e.g., "#2C5F51")
-- interior_hex: string (optional)
+- exterior_hex: (FE-only mapping; Python does not emit)
+- interior_hex: (FE-only mapping; Python does not emit)
 - listing_url: string
 - source_url: string
 
 Notes:
 - Keep values raw (no currency/k suffixes) for numeric fields. Formatting is FE’s job.
 - Provide separate `model` and `trim`. `model_trim` can remain during transition.
-- Provide separate `exterior` and `interior`; hex fields are optional but preferred when known.
+- Provide separate `exterior` and `interior`. Hex values are derived in FE only.
 
 ## Writing CSV (Python)
 
@@ -57,4 +57,3 @@ with open(out_csv, 'w', newline='', encoding='utf-8') as f:
 
 - Numeric columns (year, asking_price_usd, mileage, total_options_msrp) are raw integers — supports < / > filters.
 - Text columns (model, trim, exterior, interior) are simple strings — FE builds facets and free-text filters.
-

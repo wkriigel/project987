@@ -150,30 +150,41 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['mileage'] = 'Unknown'
                     extracted_data['mileage_confidence'] = 0.0
                 
-                # Extract model/trim
+                # Extract model/trim as separate fields (stop merging)
                 model_value, trim_value = extractor.extract_model_trim(listing.get('raw_text', ''))
                 if model_value and model_value != "Unknown":
-                    extracted_data['model_trim'] = f"{model_value} {trim_value}".strip()
+                    # Primary: separate fields
+                    extracted_data['model'] = model_value
+                    extracted_data['trim'] = trim_value or "Base"
+                    extracted_data['model_confidence'] = 1.0
+                    extracted_data['trim_confidence'] = 1.0 if trim_value else 0.8
+                    # Transitional: keep combined model_trim for downstream compatibility
+                    combined = f"{model_value} {trim_value}".strip() if trim_value else model_value
+                    extracted_data['model_trim'] = combined
                     extracted_data['model_trim_confidence'] = 1.0
                 else:
+                    extracted_data['model'] = 'Unknown'
+                    extracted_data['trim'] = 'Base'
+                    extracted_data['model_confidence'] = 0.0
+                    extracted_data['trim_confidence'] = 0.0
                     extracted_data['model_trim'] = 'Unknown'
                     extracted_data['model_trim_confidence'] = 0.0
                 
-                # Extract colors
+                # Extract colors as separate fields (stop merging); adopt schema names
                 exterior_color, interior_color = extractor.extract_colors(listing.get('raw_text', ''))
                 if exterior_color:
-                    extracted_data['exterior_color'] = exterior_color
-                    extracted_data['exterior_color_confidence'] = 1.0
+                    extracted_data['exterior'] = exterior_color
+                    extracted_data['exterior_confidence'] = 1.0
                 else:
-                    extracted_data['exterior_color'] = 'Unknown'
-                    extracted_data['exterior_color_confidence'] = 0.0
+                    extracted_data['exterior'] = 'Unknown'
+                    extracted_data['exterior_confidence'] = 0.0
                 
                 if interior_color:
-                    extracted_data['interior_color'] = interior_color
-                    extracted_data['interior_color_confidence'] = 1.0
+                    extracted_data['interior'] = interior_color
+                    extracted_data['interior_confidence'] = 1.0
                 else:
-                    extracted_data['interior_color'] = 'Unknown'
-                    extracted_data['interior_color_confidence'] = 0.0
+                    extracted_data['interior'] = 'Unknown'
+                    extracted_data['interior_confidence'] = 0.0
                 
                 # Extract source
                 source_value = extractor.extract_source(listing.get('raw_text', ''), listing.get('source_url', ''))
@@ -200,7 +211,8 @@ class TransformationStep(BasePipelineStep):
     
     def _calculate_data_quality_score(self, extracted_data: Dict[str, Any]) -> float:
         """Calculate a data quality score based on extracted fields"""
-        quality_fields = ['year', 'price', 'mileage', 'model_trim', 'exterior_color', 'interior_color', 'source']
+        # Prefer separate fields; keep model_trim for transition
+        quality_fields = ['year', 'price', 'mileage', 'model', 'trim', 'exterior', 'interior', 'source']
         total_fields = len(quality_fields)
         valid_fields = 0
         
@@ -319,18 +331,23 @@ class TransformationStep(BasePipelineStep):
                     'data_quality_score': properties.get('data_quality_score', 0),
                     
                     # Basic properties
+                    # Separate fields per CSV schema
                     'year': properties.get('year', ''),
                     'year_confidence': properties.get('year_confidence', ''),
                     'price': properties.get('price', ''),
                     'price_confidence': properties.get('price_confidence', ''),
                     'mileage': properties.get('mileage', ''),
                     'mileage_confidence': properties.get('mileage_confidence', ''),
+                    'model': properties.get('model', ''),
+                    'trim': properties.get('trim', ''),
+                    # Transitional combined field during rollout
                     'model_trim': properties.get('model_trim', ''),
-                    'model_trim_confidence': properties.get('model_trim_confidence', ''),
-                    'exterior_color': properties.get('exterior_color', ''),
-                    'interior_color': properties.get('interior_color', ''),
-                    'exterior_color_confidence': properties.get('exterior_color_confidence', ''),
-                    'interior_color_confidence': properties.get('interior_color_confidence', ''),
+                    'model_confidence': properties.get('model_confidence', ''),
+                    'trim_confidence': properties.get('trim_confidence', ''),
+                    'exterior': properties.get('exterior', ''),
+                    'interior': properties.get('interior', ''),
+                    'exterior_confidence': properties.get('exterior_confidence', ''),
+                    'interior_confidence': properties.get('interior_confidence', ''),
                     'source': properties.get('source', ''),
                     'source_confidence': properties.get('source_confidence', ''),
                     

@@ -23,15 +23,19 @@ logger = get_logger("utils.csv_io")
 # CSV field mappings for input/output
 CSV_FIELDS = {
     "input": [
-        "source", "listing_url", "model", "trim", "year", "transmission_norm", 
-        "mileage", "price_usd", "exterior_color", "interior_color", 
+        # Prefer separate fields and new names; accept legacy during transition
+        "source", "listing_url", "model", "trim", "year", "transmission_norm",
+        "mileage", "asking_price_usd", "exterior", "interior",
+        # Legacy fallbacks
+        "price_usd", "exterior_color", "interior_color",
         "raw_options", "vin", "location"
     ],
     "output": [
-        "rank", "source", "listing_url", "model", "trim", "year", 
-        "transmission_norm", "mileage", "price_usd", "fair_value_usd", 
-        "deal_delta_usd", "exterior_color", "interior_color", 
-        "color_ext_bucket", "color_int_bucket", "raw_options", 
+        # Align to CSV_SCHEMA.md
+        "rank", "source", "listing_url", "model", "trim", "year",
+        "transmission_norm", "mileage", "asking_price_usd", "fair_value_usd",
+        "deal_delta_usd", "exterior", "interior",
+        "color_ext_bucket", "color_int_bucket", "raw_options",
         "options_value", "vin", "location", "timestamp_run_id"
     ]
 }
@@ -121,27 +125,37 @@ def write_csv_output(listings: List[NormalizedListing], output_dir: str, filenam
             writer.writeheader()
             
             for i, listing in enumerate(listings, 1):
+                # Be resilient to attribute names across versions
+                def _get(obj, *names):
+                    for n in names:
+                        try:
+                            v = getattr(obj, n)
+                            return v
+                        except Exception:
+                            continue
+                    return None
+
                 row = {
                     "rank": i,
-                    "source": listing.source,
-                    "listing_url": listing.listing_url,
-                    "model": listing.model,
-                    "trim": listing.trim,
-                    "year": listing.year,
-                    "transmission_norm": listing.transmission_norm,
-                    "mileage": listing.mileage,
-                    "price_usd": listing.price_usd,
-                    "fair_value_usd": listing.fair_value_usd,
-                    "deal_delta_usd": listing.deal_delta_usd,
-                    "exterior_color": listing.exterior_color,
-                    "interior_color": listing.interior_color,
-                    "color_ext_bucket": listing.color_ext_bucket,
-                    "color_int_bucket": listing.color_int_bucket,
-                    "raw_options": listing.raw_options,
-                    "options_value": listing.options_value,
-                    "vin": listing.vin,
-                    "location": listing.location,
-                    "timestamp_run_id": listing.timestamp_run_id
+                    "source": _get(listing, 'source'),
+                    "listing_url": _get(listing, 'listing_url'),
+                    "model": _get(listing, 'model'),
+                    "trim": _get(listing, 'trim'),
+                    "year": _get(listing, 'year'),
+                    "transmission_norm": _get(listing, 'transmission_norm'),
+                    "mileage": _get(listing, 'mileage'),
+                    "asking_price_usd": _get(listing, 'asking_price_usd', 'price_usd'),
+                    "fair_value_usd": _get(listing, 'fair_value_usd'),
+                    "deal_delta_usd": _get(listing, 'deal_delta_usd'),
+                    "exterior": _get(listing, 'exterior', 'exterior_color'),
+                    "interior": _get(listing, 'interior', 'interior_color'),
+                    "color_ext_bucket": _get(listing, 'color_ext_bucket'),
+                    "color_int_bucket": _get(listing, 'color_int_bucket'),
+                    "raw_options": _get(listing, 'raw_options'),
+                    "options_value": _get(listing, 'options_value'),
+                    "vin": _get(listing, 'vin'),
+                    "location": _get(listing, 'location'),
+                    "timestamp_run_id": _get(listing, 'timestamp_run_id')
                 }
                 writer.writerow(row)
         

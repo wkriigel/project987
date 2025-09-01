@@ -92,7 +92,11 @@ export function App() {
     {
       title: 'Model/Trim',
       key: 'modeltrim',
-      sorter: (a,b) => (normalizeModelTrim(a.model_trim) || '').localeCompare(normalizeModelTrim(b.model_trim) || ''),
+      sorter: (a,b) => (
+        normalizeModelTrim((((a.model || '') + ' ' + (a.trim || '')).trim() || (a.model_trim || ''))) || ''
+      ).localeCompare(
+        normalizeModelTrim((((b.model || '') + ' ' + (b.trim || '')).trim() || (b.model_trim || ''))) || ''
+      ),
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
         <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
           <Input
@@ -108,13 +112,13 @@ export function App() {
       ),
       filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>🔎</span>),
       onFilter: (value, rec) => {
-        const mt = normalizeModelTrim(rec.model_trim)
-        const s = `${mt ?? ''} ${rec.model_trim ?? ''}`.toLowerCase()
+        const mt = normalizeModelTrim((((rec.model || '') + ' ' + (rec.trim || '')).trim() || (rec.model_trim || '')))
+        const s = (mt || '').toLowerCase()
         return s.includes(String(value).toLowerCase())
       },
       onFilterDropdownOpenChange: (open) => { if (open) setTimeout(() => ymtInputRef.current?.select(), 100) },
       render: (_, r) => {
-        const mt = normalizeModelTrim(r.model_trim || `${r.model || ''} ${r.trim || ''}`)
+        const mt = normalizeModelTrim((((r.model || '') + ' ' + (r.trim || '')).trim() || (r.model_trim || '')))
         return <span className="text-xs md:text-sm">{mt}</span>
       }
     },
@@ -466,7 +470,7 @@ export function App() {
                 rowKey={(r) => (
                   r.listing_url ||
                   r.source_url ||
-                  `${toInt(r.year) || 0}-${normalizeModelTrim(r.model_trim) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
+                  `${toInt(r.year) || 0}-${normalizeModelTrim((((r.model || '') + ' ' + (r.trim || '')).trim() || (r.model_trim || ''))) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
                 )}
                 columns={columns}
                 dataSource={data.filter(r => toInt(r.year) != null)}
