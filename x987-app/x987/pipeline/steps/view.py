@@ -293,9 +293,11 @@ class ViewStep(BasePipelineStep):
             bp = _to_int(best_deal.get('asking_price_usd'))
             best_deal_text = f"${bd:,}" if bd is not None else "No deal data"
             best_deal_price = f"${bp:,}" if bp is not None else "No price"
-            # Normalize model/trim for display: hide 'Base', ensure 'S' uppercase
-            _raw_best_mt = best_deal.get('model_trim', 'N/A')
-            _norm_best_mt = self._normalize_model_trim_text(_raw_best_mt)
+            # Compose model/trim from separate fields for display
+            best_model = (best_deal.get('model') or '').strip()
+            best_trim = (best_deal.get('trim') or '').strip()
+            combined = f"{best_model} {best_trim}".strip()
+            _norm_best_mt = self._normalize_model_trim_text(combined)
             best_deal_model = f"{best_deal.get('year', 'N/A')} {_norm_best_mt or 'N/A'}"
         else:
             best_deal_text = "No deals"
@@ -307,8 +309,10 @@ class ViewStep(BasePipelineStep):
             wp = _to_int(worst_deal.get('asking_price_usd'))
             worst_deal_text = f"${wd:,}" if wd is not None else "No deal data"
             worst_deal_price = f"${wp:,}" if wp is not None else "No price"
-            _raw_worst_mt = worst_deal.get('model_trim', 'N/A')
-            _norm_worst_mt = self._normalize_model_trim_text(_raw_worst_mt)
+            worst_model = (worst_deal.get('model') or '').strip()
+            worst_trim = (worst_deal.get('trim') or '').strip()
+            combined_worst = f"{worst_model} {worst_trim}".strip()
+            _norm_worst_mt = self._normalize_model_trim_text(combined_worst)
             worst_deal_model = f"{worst_deal.get('year', 'N/A')} {_norm_worst_mt or 'N/A'}"
         else:
             worst_deal_text = "No deals"
@@ -363,13 +367,16 @@ class ViewStep(BasePipelineStep):
                 row_styles=["", f"on {THEME.get('stripe_1', '#11151B')}"]
             )
 
-            # Add columns (Deal Δ hidden but sorting preserved upstream)
-            table.add_column("Year/Model/Trim", no_wrap=True, min_width=16)
+            # Add columns (separate fields; no merged columns)
+            table.add_column("Year", no_wrap=True, min_width=4)
+            table.add_column("Model", no_wrap=True, min_width=8)
+            table.add_column("Trim", no_wrap=True, min_width=6)
             table.add_column("Price", justify="right", no_wrap=True, min_width=6)
             table.add_column("Miles", justify="right", no_wrap=True, min_width=5)
             table.add_column("MSRP", justify="right", no_wrap=True, min_width=5)
             table.add_column("Top Options", no_wrap=False, overflow="fold", min_width=22)
-            table.add_column("Colors", no_wrap=True, min_width=10)
+            table.add_column("Exterior", no_wrap=True, min_width=8)
+            table.add_column("Interior", no_wrap=True, min_width=8)
             table.add_column("Source", no_wrap=False, min_width=10)
 
             # Add rows
@@ -494,43 +501,15 @@ class ViewStep(BasePipelineStep):
                         mileage_text = ""
                         miles_style = "dim"
 
-                    # Year/model/trim (normalize: hide 'Base', ensure 'S' uppercase)
+                    # Year, Model, Trim in separate columns
                     year = listing.get('year', '')
-                    raw_model_trim = listing.get('model_trim', '')
-                    norm_model_trim = self._normalize_model_trim_text(raw_model_trim)
-                    model_style = THEME.get(model_style_key(norm_model_trim, norm_model_trim), "#C9D1D9")
+                    model_text = (listing.get('model') or '').strip()
+                    trim_text = (listing.get('trim') or '').strip()
+                    # Simple style dimming for manual if needed
                     if is_manual:
-                        model_style = f"dim {model_style}"
-
-                    # Build a styled Text where the year can be dimmed separately (2005–2008)
-                    from rich.text import Text as RichText
-                    model_cell = RichText()
+                        model_text = f"[dim]{model_text}[/dim]" if model_text else ""
+                        trim_text = f"[dim]{trim_text}[/dim]" if trim_text else ""
                     year_str = str(year or '').strip()
-                    if year_str:
-                        try:
-                            y_int = int(''.join(ch for ch in year_str if ch.isdigit()))
-                        except Exception:
-                            y_int = None
-                        # Dim year if in early years set
-                        if y_int in (2005, 2006, 2007, 2008):
-                            year_style = f"dim {model_style}" if model_style else "dim"
-                        else:
-                            year_style = model_style or None
-                        model_cell.append(year_str, style=year_style)
-                        if norm_model_trim:
-                            model_cell.append(" ")
-                    if norm_model_trim:
-                        model_cell.append(norm_model_trim, style=model_style or None)
-                    if not year_str and not norm_model_trim:
-                        model_cell.append("")
-
-                    # Conditional highlight for Year/Model/Trim: year >= 2009 AND price, miles, and msrp are highlighted
-                    try:
-                        if (y_int is not None and y_int >= 2009) and price_bg and miles_bg and msrp_bg:
-                            model_bg_hex = THEME.get("gray_700", "#3A4654")
-                            model_cell.stylize(f"on {model_bg_hex}")
-                    except Exception:
-                        pass
 
                     # Color swatches (ext/int)
                     def _norm(s: str) -> str:
@@ -564,14 +543,15 @@ class ViewStep(BasePipelineStep):
                         if re.search(r"blue|navy", s): return "#2F3A56"
                         if re.search(r"white|ivory|alabaster", s): return "#E8E8E8"
                         return "#777777"
-                    def render_color_swatches(ext: str, intr: str) -> Text:
+                    def _swatch(style_hex: str) -> Text:
                         t = Text()
-                        t.append(" " * 5, style=f"on {_paint_hex(ext)}")
-                        t.append(" " * 5, style=f"on {_interior_hex(intr)}")
+                        t.append(" " * 5, style=f"on {style_hex}")
                         return t
-                    ext_color = listing.get('exterior_color') or ""
-                    int_color = listing.get('interior_color') or ""
-                    colors_cell = render_color_swatches(ext_color, int_color)
+                    # Use new schema fields with legacy fallback
+                    ext_color = listing.get('exterior') or listing.get('exterior_color') or ""
+                    int_color = listing.get('interior') or listing.get('interior_color') or ""
+                    exterior_cell = _swatch(_paint_hex(ext_color))
+                    interior_cell = _swatch(_interior_hex(int_color))
 
                     # Options: cleaned, full list
                     raw_text_full = listing.get('raw_text', '')
@@ -690,12 +670,15 @@ class ViewStep(BasePipelineStep):
 
                     # Add row (Deal Δ omitted in display)
                     table.add_row(
-                        model_cell,
+                        str(year or ''),
+                        model_text,
+                        trim_text,
                         Text(price_text, style=price_style),
                         Text(mileage_text, style=miles_style),
                         Text(msrp_text, style=msrp_style),
                         options_text,
-                        colors_cell,
+                        exterior_cell,
+                        interior_cell,
                         source_text
                     )
 

@@ -201,18 +201,21 @@ def create_report_table(listings: List[NormalizedListing]) -> Table:
 def add_listing_row(table: Table, listing: NormalizedListing, row_index: int) -> None:
     """Add a listing row to the table"""
     # Get styling keys
-    price_style = price_style_key(listing.price_usd)
+    price_val = getattr(listing, 'asking_price_usd', None) or getattr(listing, 'price_usd', None)
+    price_style = price_style_key(price_val)
     miles_style = miles_style_key(listing.mileage)
     model_style = model_style_key(listing.model, listing.trim)
     transmission_style = transmission_style_key(listing.transmission_raw)
     
     # Format values
     deal_delta = format_deal_delta(listing.deal_delta)
-    price = format_price(listing.price_usd)
+    price = format_price(price_val)
     miles = format_miles(listing.mileage)
     year_model_trim = format_year_model_trim(listing.year, listing.model, listing.trim)
     transmission = format_transmission(listing.transmission_raw)
-    colors = format_colors(listing.exterior_color, listing.interior_color)
+    ext = getattr(listing, 'exterior', None) or getattr(listing, 'exterior_color', None)
+    intr = getattr(listing, 'interior', None) or getattr(listing, 'interior_color', None)
+    colors = format_colors(ext, intr)
     options = listing.top_options or ""
     source = listing.source or "unknown"
     

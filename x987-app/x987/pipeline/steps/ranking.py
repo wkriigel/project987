@@ -195,10 +195,10 @@ class RankingStep(BasePipelineStep):
             except (ValueError, TypeError):
                 pass
         
-        # Model premium (S models get bonus)
-        model = item.get('model', '')
-        if 'S' in model:
-            score += 1000  # S model premium
+        # Trim premium (S trim gets bonus)
+        trim = item.get('trim', '')
+        if str(trim).strip().upper() == 'S':
+            score += 1000  # S trim premium
         
         # Transmission preference (Manual gets bonus)
         transmission = item.get('transmission', '')

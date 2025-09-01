@@ -24,6 +24,8 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const ymtInputRef = useRef<HTMLInputElement | null>(null)
   const optionFacets = useMemo(() => facetCounts(data), [data])
+  const exteriorFacets = useMemo(() => paintFacetCounts('exterior', data), [data])
+  const interiorFacets = useMemo(() => paintFacetCounts('interior', data), [data])
 
   useEffect(() => {
     let mounted = true
@@ -47,62 +49,77 @@ export function App() {
 
   const columns: ColumnsType<RankingRecord> = useMemo(() => [
     {
-      title: 'Year/Model/Trim',
-      key: 'model',
+      title: 'Year',
+      key: 'year',
+      width: 90,
       sorter: (a,b) => (toInt(a.year)||0) - (toInt(b.year)||0),
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
+        const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { min?: number; max?: number }
+        return (
+          <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+            <InputNumber
+              placeholder="Min"
+              value={curr.min}
+              onChange={(val) => { const next = { ...curr, min: val == null ? undefined : Number(val) }; setSelectedKeys([JSON.stringify(next)]); confirm({ closeDropdown: false }) }}
+              style={{ width: 120, marginBottom: 8, display: 'block' }}
+            />
+            <InputNumber
+              placeholder="Max"
+              value={curr.max}
+              onChange={(val) => { const next = { ...curr, max: val == null ? undefined : Number(val) }; setSelectedKeys([JSON.stringify(next)]); confirm({ closeDropdown: false }) }}
+              style={{ width: 120, marginBottom: 8, display: 'block' }}
+            />
+            <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
+          </div>
+        )
+      },
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>🗓️</span>),
+      onFilter: (value, rec) => {
+        let range: { min?: number; max?: number } = {}
+        try { range = JSON.parse(String(value)) } catch {}
+        const v = toInt(rec.year)
+        if (v == null) return false
+        if (range.min != null && v < range.min) return false
+        if (range.max != null && v > range.max) return false
+        return true
+      },
+      render: (_, r) => {
+        const y = toInt(r.year)
+        const dimYear = isEarlyYearDim(r)
+        return <Chip text={y ?? ''} dim={dimYear} />
+      }
+    },
+    {
+      title: 'Model/Trim',
+      key: 'modeltrim',
+      sorter: (a,b) => (
+        normalizeModelTrim((((a.model || '') + ' ' + (a.trim || '')).trim() || (a.model_trim || ''))) || ''
+      ).localeCompare(
+        normalizeModelTrim((((b.model || '') + ' ' + (b.trim || '')).trim() || (b.model_trim || ''))) || ''
+      ),
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
         <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
           <Input
             ref={ymtInputRef}
-            placeholder="Search year/model/trim"
+            placeholder="Search model/trim"
             value={(selectedKeys as React.Key[])[0] as string}
-            onChange={(e) => {
-              const val = e.target.value
-              setSelectedKeys(val ? [val] : [])
-              confirm({ closeDropdown: false })
-            }}
+            onChange={(e) => { const val = e.target.value; setSelectedKeys(val ? [val] : []); confirm({ closeDropdown: false }) }}
             onPressEnter={() => confirm()}
             style={{ marginBottom: 8, display: 'block' }}
           />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <a
-              onClick={() => {
-                clearFilters && clearFilters()
-                confirm()
-              }}
-            >
-              Reset
-            </a>
-          </div>
+          <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
         </div>
       ),
-      filterIcon: (filtered: boolean) => (
-        <span style={{ color: filtered ? '#1677ff' : undefined }}>🔎</span>
-      ),
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>🔎</span>),
       onFilter: (value, rec) => {
-        const y = toInt(rec.year)
-        const mt = normalizeModelTrim(rec.model_trim)
-        const s = `${y ?? ''} ${mt ?? ''} ${rec.model_trim ?? ''}`.toLowerCase()
+        const mt = normalizeModelTrim((((rec.model || '') + ' ' + (rec.trim || '')).trim() || (rec.model_trim || '')))
+        const s = (mt || '').toLowerCase()
         return s.includes(String(value).toLowerCase())
       },
-      // uncontrolled: let Table manage filter state via selectedKeys
-      onFilterDropdownOpenChange: (open) => {
-        if (open) {
-          setTimeout(() => ymtInputRef.current?.select(), 100)
-        }
-      },
+      onFilterDropdownOpenChange: (open) => { if (open) setTimeout(() => ymtInputRef.current?.select(), 100) },
       render: (_, r) => {
-        const y = toInt(r.year)
-        const mt = normalizeModelTrim(r.model_trim)
-        const dimYear = isEarlyYearDim(r)
-        const hl = isModelCellHighlighted(r)
-        const cellStyle: React.CSSProperties = hl ? { backgroundColor: roles.bg.emphasis as string } : {}
-        return (
-          <span style={cellStyle} className="px-1 rounded inline-flex items-center gap-1">
-            <Chip text={y ?? ''} dim={dimYear} />
-            {mt && <span className="text-xs md:text-sm">{mt}</span>}
-          </span>
-        )
+        const mt = normalizeModelTrim((((r.model || '') + ' ' + (r.trim || '')).trim() || (r.model_trim || '')))
+        return <span className="text-xs md:text-sm">{mt}</span>
       }
     },
     {
@@ -324,30 +341,94 @@ export function App() {
       render: (_, r) => optionsCompact(r.options_list)
     },
     {
-      title: 'Colors',
-      key: 'colors',
+      title: 'Exterior',
+      key: 'exterior',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
+        const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { tags?: string[] }
+        const tags = curr.tags || []
+        const onChange = (vals: string[]) => { setSelectedKeys([JSON.stringify({ tags: vals })]); confirm({ closeDropdown: false }) }
+        return (
+          <div style={{ padding: 8, width: 240 }} onKeyDown={(e) => e.stopPropagation()}>
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Select exterior colors"
+              value={tags}
+              onChange={onChange}
+              style={{ width: '100%', marginBottom: 8 }}
+              options={exteriorFacets.map(f => ({ value: f.key, label: `${f.label} (${f.count})` }))}
+            />
+            <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
+          </div>
+        )
+      },
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>☑︎</span>),
+      onFilter: (value, rec) => {
+        let payload: { tags?: string[] } = {}
+        try { payload = JSON.parse(String(value)) } catch {}
+        const chosen = payload.tags || []
+        if (chosen.length === 0) return true
+        const exInfo = extractPaintFromRecord('exterior', rec)
+        const key = (exInfo.name || exInfo.hex || '').toString().trim().toLowerCase()
+        return chosen.includes(key)
+      },
       render: (_, r) => {
         const exInfo = extractPaintFromRecord('exterior', r)
-        const inInfo = extractPaintFromRecord('interior', r)
         const exName = (exInfo.name as any) || ''
+        return (
+          <PaintChipExterior
+            name={exName}
+            hex={exInfo.hex}
+            label={exName || exInfo.hex || '—'}
+            size="md"
+            className="w-full min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
+          />
+        )
+      }
+    },
+    {
+      title: 'Interior',
+      key: 'interior',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
+        const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { tags?: string[] }
+        const tags = curr.tags || []
+        const onChange = (vals: string[]) => { setSelectedKeys([JSON.stringify({ tags: vals })]); confirm({ closeDropdown: false }) }
+        return (
+          <div style={{ padding: 8, width: 240 }} onKeyDown={(e) => e.stopPropagation()}>
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Select interior colors"
+              value={tags}
+              onChange={onChange}
+              style={{ width: '100%', marginBottom: 8 }}
+              options={interiorFacets.map(f => ({ value: f.key, label: `${f.label} (${f.count})` }))}
+            />
+            <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
+          </div>
+        )
+      },
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>☑︎</span>),
+      onFilter: (value, rec) => {
+        let payload: { tags?: string[] } = {}
+        try { payload = JSON.parse(String(value)) } catch {}
+        const chosen = payload.tags || []
+        if (chosen.length === 0) return true
+        const inInfo = extractPaintFromRecord('interior', rec)
+        const key = (inInfo.name || inInfo.hex || '').toString().trim().toLowerCase()
+        return chosen.includes(key)
+      },
+      render: (_, r) => {
+        const inInfo = extractPaintFromRecord('interior', r)
         const inName = (inInfo.name as any) || ''
         return (
-          <div className="flex items-stretch gap-1 w-full">
-            <PaintChipExterior
-              name={exName}
-              hex={exInfo.hex}
-              label={exName || exInfo.hex || '—'}
-              size="md"
-              className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
-            />
-            <PaintChipInterior
-              name={inName}
-              hex={inInfo.hex}
-              label={inName || inInfo.hex || '—'}
-              size="md"
-              className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
-            />
-          </div>
+          <PaintChipInterior
+            name={inName}
+            hex={inInfo.hex}
+            label={inName || inInfo.hex || '—'}
+            size="md"
+            className="w-full min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
+          />
         )
       }
     },
@@ -389,7 +470,7 @@ export function App() {
                 rowKey={(r) => (
                   r.listing_url ||
                   r.source_url ||
-                  `${toInt(r.year) || 0}-${normalizeModelTrim(r.model_trim) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
+                  `${toInt(r.year) || 0}-${normalizeModelTrim((((r.model || '') + ' ' + (r.trim || '')).trim() || (r.model_trim || ''))) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
                 )}
                 columns={columns}
                 dataSource={data.filter(r => toInt(r.year) != null)}
@@ -442,4 +523,21 @@ export function App() {
       </Layout>
     </ConfigProvider>
   )
+}
+
+function paintFacetCounts(kind: 'exterior'|'interior', data: any[]) {
+  const counts = new Map<string, number>()
+  for (const r of data || []) {
+    const info = extractPaintFromRecord(kind, r)
+    const key = (info.name || info.hex || '').toString().trim().toLowerCase()
+    if (!key) continue
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+  return Array.from(counts.entries())
+    .map(([key, count]) => ({ key, label: titleCase(key), count }))
+    .sort((a, b) => (b.count - a.count) || a.label.localeCompare(b.label))
+}
+
+function titleCase(s: string) {
+  return (s || '').split(/\s+/).map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ')
 }
