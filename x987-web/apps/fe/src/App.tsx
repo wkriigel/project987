@@ -24,6 +24,8 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const ymtInputRef = useRef<HTMLInputElement | null>(null)
   const optionFacets = useMemo(() => facetCounts(data), [data])
+  const exteriorFacets = useMemo(() => paintFacetCounts('exterior', data), [data])
+  const interiorFacets = useMemo(() => paintFacetCounts('interior', data), [data])
 
   useEffect(() => {
     let mounted = true
@@ -337,6 +339,35 @@ export function App() {
     {
       title: 'Exterior',
       key: 'exterior',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
+        const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { tags?: string[] }
+        const tags = curr.tags || []
+        const onChange = (vals: string[]) => { setSelectedKeys([JSON.stringify({ tags: vals })]); confirm({ closeDropdown: false }) }
+        return (
+          <div style={{ padding: 8, width: 240 }} onKeyDown={(e) => e.stopPropagation()}>
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Select exterior colors"
+              value={tags}
+              onChange={onChange}
+              style={{ width: '100%', marginBottom: 8 }}
+              options={exteriorFacets.map(f => ({ value: f.key, label: `${f.label} (${f.count})` }))}
+            />
+            <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
+          </div>
+        )
+      },
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>☑︎</span>),
+      onFilter: (value, rec) => {
+        let payload: { tags?: string[] } = {}
+        try { payload = JSON.parse(String(value)) } catch {}
+        const chosen = payload.tags || []
+        if (chosen.length === 0) return true
+        const exInfo = extractPaintFromRecord('exterior', rec)
+        const key = (exInfo.name || exInfo.hex || '').toString().trim().toLowerCase()
+        return chosen.includes(key)
+      },
       render: (_, r) => {
         const exInfo = extractPaintFromRecord('exterior', r)
         const exName = (exInfo.name as any) || ''
@@ -354,6 +385,35 @@ export function App() {
     {
       title: 'Interior',
       key: 'interior',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
+        const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { tags?: string[] }
+        const tags = curr.tags || []
+        const onChange = (vals: string[]) => { setSelectedKeys([JSON.stringify({ tags: vals })]); confirm({ closeDropdown: false }) }
+        return (
+          <div style={{ padding: 8, width: 240 }} onKeyDown={(e) => e.stopPropagation()}>
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Select interior colors"
+              value={tags}
+              onChange={onChange}
+              style={{ width: '100%', marginBottom: 8 }}
+              options={interiorFacets.map(f => ({ value: f.key, label: `${f.label} (${f.count})` }))}
+            />
+            <a onClick={() => { clearFilters?.(); confirm() }}>Reset</a>
+          </div>
+        )
+      },
+      filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>☑︎</span>),
+      onFilter: (value, rec) => {
+        let payload: { tags?: string[] } = {}
+        try { payload = JSON.parse(String(value)) } catch {}
+        const chosen = payload.tags || []
+        if (chosen.length === 0) return true
+        const inInfo = extractPaintFromRecord('interior', rec)
+        const key = (inInfo.name || inInfo.hex || '').toString().trim().toLowerCase()
+        return chosen.includes(key)
+      },
       render: (_, r) => {
         const inInfo = extractPaintFromRecord('interior', r)
         const inName = (inInfo.name as any) || ''
@@ -459,4 +519,21 @@ export function App() {
       </Layout>
     </ConfigProvider>
   )
+}
+
+function paintFacetCounts(kind: 'exterior'|'interior', data: any[]) {
+  const counts = new Map<string, number>()
+  for (const r of data || []) {
+    const info = extractPaintFromRecord(kind, r)
+    const key = (info.name || info.hex || '').toString().trim().toLowerCase()
+    if (!key) continue
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+  return Array.from(counts.entries())
+    .map(([key, count]) => ({ key, label: titleCase(key), count }))
+    .sort((a, b) => (b.count - a.count) || a.label.localeCompare(b.label))
+}
+
+function titleCase(s: string) {
+  return (s || '').split(/\s+/).map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ')
 }
