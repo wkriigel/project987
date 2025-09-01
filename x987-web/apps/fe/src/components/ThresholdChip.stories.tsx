@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { ThresholdChip } from './ThresholdChip'
 
 const meta: Meta<typeof ThresholdChip> = {
-  title: 'Components/ThresholdChip',
+  title: 'UI/Chips/Chip/ThresholdChip',
   component: ThresholdChip,
   tags: ['autodocs'],
   parameters: {

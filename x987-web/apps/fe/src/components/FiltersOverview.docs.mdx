@@ -1,0 +1,38 @@
+import { Meta, Canvas, Story } from '@storybook/blocks'
+import { FilterSelect } from './FilterSelect'
+
+<Meta title="Inputs/Filters/Overview" />
+
+# Filters Overview
+
+Inputs used above the results table to narrow data. Filters should:
+
+- Be generic and composable (avoid business logic in UI components).
+- Use brand tokens via theme (`roles`).
+- Be controlled values to integrate with app state.
+
+## Current primitives
+
+- `FilterSelect`: generic labeled single-select used for Generation.
+
+## Example
+
+<Canvas>
+  <Story name="Generation (FilterSelect)">
+    {() => (
+      <div style={{ padding: 16, background: '#1F2937', color: '#C9D1D9', borderRadius: 8, display: 'inline-block' }}>
+        <FilterSelect
+          label="Generation"
+          value={'all'}
+          onChange={() => {}}
+          options={[
+            { label: 'All', value: 'all' },
+            { label: '987.1', value: '987.1' },
+            { label: '987.2', value: '987.2' }
+          ]}
+        />
+      </div>
+    )}
+  </Story>
+</Canvas>
+

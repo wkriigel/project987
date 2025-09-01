@@ -13,6 +13,10 @@ import { thresholdSpecs, toLevelFromSpec } from './design/thresholds'
 import { facetCounts, tagsForRecord } from './lib/options'
 import { PaintChipExterior, PaintChipInterior } from './components/PaintChip'
 import { extractPaintFromRecord } from './design/paint/normalize'
+import { FilterSelect } from './components/FilterSelect'
+import { applyGenerationFilter } from './lib/filters'
+import type { GenerationValue } from './lib/filters'
+import { generationOptionsAll } from './lib/generation'
 
 const { Header, Content } = Layout
 const { Text, Link } = Typography
@@ -26,6 +30,7 @@ export function App() {
   const optionFacets = useMemo(() => facetCounts(data), [data])
   const exteriorFacets = useMemo(() => paintFacetCounts('exterior', data), [data])
   const interiorFacets = useMemo(() => paintFacetCounts('interior', data), [data])
+  const [generation, setGeneration] = useState<GenerationValue>('all')
 
   useEffect(() => {
     let mounted = true
@@ -443,11 +448,13 @@ export function App() {
     }
   ], [optionFacets])
 
+  const filtered = useMemo(() => applyGenerationFilter(data, generation), [data, generation])
+  const genOptions = useMemo(() => generationOptionsAll(data), [data])
   const summary = useMemo(() => {
-    const displayed = data.filter(r => toInt(r.year) != null)
+    const displayed = filtered.filter(r => toInt(r.year) != null)
     const unknown = data.filter(r => toInt(r.year) == null)
     return { displayedCount: displayed.length, unknown }
-  }, [data])
+  }, [data, filtered])
 
   const [page, setPage] = useState<{ current: number; pageSize: number }>({ current: 1, pageSize: 20 })
 
@@ -464,6 +471,17 @@ export function App() {
               unknownLinks={summary.unknown.map(r => (r.listing_url || r.source_url || "")).filter(Boolean)}
             />
 
+            {/* Top-of-table controls */}
+            <div className="flex flex-wrap gap-3 items-end">
+              <FilterSelect
+                label="Generation"
+                value={generation}
+                onChange={(v) => setGeneration(String(v) as GenerationValue)}
+                className="w-full sm:w-[420px] md:w-[560px]"
+                options={genOptions}
+              />
+            </div>
+
             {loading ? <Spin/> : error ? <Text type="danger">{error}</Text> : (
               <Table
                 size="small"
@@ -473,7 +491,7 @@ export function App() {
                   `${toInt(r.year) || 0}-${normalizeModelTrim(((r.model || '') + ' ' + (r.trim || '')).trim()) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
                 )}
                 columns={columns}
-                dataSource={data.filter(r => toInt(r.year) != null)}
+                dataSource={filtered.filter(r => toInt(r.year) != null)}
                 pagination={{ current: page.current, pageSize: page.pageSize }}
                 onChange={(pag) => setPage({ current: pag?.current ?? 1, pageSize: pag?.pageSize ?? 20 })}
               />

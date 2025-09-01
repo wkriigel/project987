@@ -1,0 +1,59 @@
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Guides/Storybook Guidelines" />
+
+# Storybook Guidelines
+
+This guide defines how we write, organize, and maintain stories to ensure consistent, accessible, and useful documentation across the x987 design system and app UI.
+
+## Structure & Naming
+
+- Use a clear hierarchy via `title`:
+  - `UI/Chips/Chip`, and nest derived components under it: `UI/Chips/Chip/ThresholdChip`, `UI/Chips/Chip/PaintChip`
+  - `Inputs/Filters/FilterSelect`
+  - `Guides/...` for process documentation (this page)
+- Prefer nouns for groups and components (e.g., `UI/Chips/Chip`).
+- Keep story names short and state-focused: `Small`, `Disabled`, `FullWidth`.
+
+### Indicating inheritance/extension
+
+- Place variants that extend a base under the base’s path.
+- Example: `ThresholdChip` and `PaintChip` extend `Chip` → `UI/Chips/Chip/ThresholdChip` and `UI/Chips/Chip/PaintChip`.
+- Also list variants as `subcomponents` on the base’s meta so docs show related APIs on the same page.
+
+## Story Basics
+
+- Each component has at least:
+  - A basic state (Default or Small)
+  - A disabled/unavailable state (if applicable)
+  - Edge case or expanded state (e.g., ManyOptions)
+- Use `args` and Controls to demonstrate props; avoid custom renders unless necessary.
+- Favor small, focused stories vs. one giant example.
+
+## Theming & Layout
+
+- All stories render with global Tailwind + Ant Design reset via preview config.
+- Use minimal wrapper styling for contrast (e.g., a padded container) when needed.
+- Do not hardcode brand colors in components; use tokens from `roles`.
+
+## Accessibility
+
+- Label interactive controls (Selects, Inputs) with a visible label prop.
+- Ensure hit targets are large enough and keyboard focus is usable (AntD defaults suffice).
+- Prefer semantic HTML via AntD components and proper `aria-*` from the library.
+
+## Quality & Testing
+
+- Cover primary states and props so maintainers can visually validate common cases.
+- Keep stories deterministic: mock data inline, no network calls.
+- If adding interactive logic, consider a `play` function for deterministic checks (optional).
+
+## Documentation Pages
+
+- Use `.docs.mdx` or `.stories.mdx` for component-specific guidance, API notes, or usage patterns.
+- Keep examples copy‑paste friendly; prefer typed snippets with minimal external dependencies.
+
+## When to Create a New Group
+
+- If a component doesn’t conceptually fit an existing area (e.g., a new filter type), create a group:
+  - Example: `Inputs/Filters/ModelSelect` (future), separate from `UI/Chips/*`.

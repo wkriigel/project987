@@ -1,0 +1,46 @@
+import { Meta, Canvas, Story } from '@storybook/blocks'
+import { Chip } from './Chip'
+import { ThresholdChip } from './ThresholdChip'
+import { PaintChip, PaintChipExterior, PaintChipInterior } from './PaintChip'
+
+<Meta title="UI/Chips/Chip/Overview" />
+
+# Chips Overview
+
+Base: `Chip` — a low-level presentational token for compact labels.
+
+Variants extend Chip to encode semantics and color tokens:
+
+- `ThresholdChip`: visualizes a 5-level status mapped to `roles.threshold` scales.
+- `PaintChip`: visualizes a paint sample + label for interior/exterior colors.
+
+## Comparison
+
+<Canvas>
+  <Story name="Side-by-side">
+    {() => (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+        <div>
+          <h4>Chip</h4>
+          <Chip text="Base" />
+        </div>
+        <div>
+          <h4>ThresholdChip</h4>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <ThresholdChip color="teal" level="poor" text="poor" />
+            <ThresholdChip color="teal" level="good" text="good" />
+            <ThresholdChip color="teal" level="excellent" text="excellent" />
+          </div>
+        </div>
+        <div>
+          <h4>PaintChip</h4>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <PaintChipExterior name="meteor gray" hex="#7A7F86" />
+            <PaintChipInterior name="black" hex="#111111" />
+          </div>
+        </div>
+      </div>
+    )}
+  </Story>
+</Canvas>
+
