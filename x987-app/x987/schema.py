@@ -49,40 +49,9 @@ class NormalizedListing:
     location: Optional[str] = None
     error: Optional[str] = None
 
-    # Transitional legacy aliases (accepted on input; not authoritative)
-    model_trim: Optional[str] = None
-    price_usd: Optional[int] = None
-    exterior_color: Optional[str] = None
-    interior_color: Optional[str] = None
-
     def __post_init__(self):
-        # Derive model/trim from model_trim if separate fields missing
-        if (not self.model) and self.model_trim:
-            try:
-                parts = str(self.model_trim).strip().split(" ", 1)
-                self.model = parts[0] if parts and parts[0] else self.model
-                if len(parts) > 1 and parts[1]:
-                    self.trim = parts[1]
-            except Exception:
-                pass
-
-        # Keep aliases in sync (asking_price_usd <-> price_usd)
-        if self.asking_price_usd is None and self.price_usd is not None:
-            self.asking_price_usd = self.price_usd
-        if self.price_usd is None and self.asking_price_usd is not None:
-            self.price_usd = self.asking_price_usd
-
-        # Colors: prefer exterior/interior; map legacy if needed
-        if (not self.exterior) and self.exterior_color:
-            self.exterior = self.exterior_color
-        if (not self.interior) and self.interior_color:
-            self.interior = self.interior_color
-        # Maintain legacy mirrors for compatibility
-        if (not self.exterior_color) and self.exterior:
-            self.exterior_color = self.exterior
-        if (not self.interior_color) and self.interior:
-            self.interior_color = self.interior
-
+        # Basic normalization can be added here if needed in future
+        pass
 
 # Lightweight typed mapping for generic listing records
 try:
@@ -92,7 +61,6 @@ try:
         year: Optional[int]
         model: Optional[str]
         trim: Optional[str]
-        model_trim: Optional[str]
         asking_price_usd: Optional[int]
         mileage: Optional[int]
         total_options_msrp: Optional[int]
@@ -105,4 +73,3 @@ try:
 except Exception:
     # Fallback if TypedDict unavailable
     ListingData = Dict[str, Any]  # type: ignore
-

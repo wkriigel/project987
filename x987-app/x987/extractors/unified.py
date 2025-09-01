@@ -76,7 +76,8 @@ class UnifiedExtractor:
         results['price_usd'] = self.extract_price(text)
         results['mileage'] = self.extract_mileage(text)
         results['model'], results['trim'] = self.extract_model_trim(text)
-        results['exterior_color'], results['interior_color'] = self.extract_colors(text)
+        ext, intr = self.extract_colors(text)
+        results['exterior'], results['interior'] = ext, intr
         results['source'] = self.extract_source(text, url)
         
         return results

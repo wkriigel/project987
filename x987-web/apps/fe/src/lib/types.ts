@@ -3,17 +3,12 @@ export interface RankingRecord {
   year?: string
   model?: string
   trim?: string
-  model_trim?: string
   asking_price_usd?: string
   mileage?: string
   total_options_msrp?: string
   options_list?: string | string[]
-  exterior_color_name?: string
-  interior_color_name?: string
   exterior?: string
   interior?: string
-  exterior_hex?: string
-  interior_hex?: string
   listing_url?: string
   source_url?: string
   deal_delta_usd?: string

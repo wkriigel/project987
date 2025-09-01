@@ -548,8 +548,8 @@ class ViewStep(BasePipelineStep):
                         t.append(" " * 5, style=f"on {style_hex}")
                         return t
                     # Use new schema fields with legacy fallback
-                    ext_color = listing.get('exterior') or listing.get('exterior_color') or ""
-                    int_color = listing.get('interior') or listing.get('interior_color') or ""
+                    ext_color = listing.get('exterior') or ""
+                    int_color = listing.get('interior') or ""
                     exterior_cell = _swatch(_paint_hex(ext_color))
                     interior_cell = _swatch(_interior_hex(int_color))
 

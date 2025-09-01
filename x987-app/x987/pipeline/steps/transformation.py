@@ -150,25 +150,18 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['mileage'] = 'Unknown'
                     extracted_data['mileage_confidence'] = 0.0
                 
-                # Extract model/trim as separate fields (stop merging)
+                # Extract model/trim as separate fields
                 model_value, trim_value = extractor.extract_model_trim(listing.get('raw_text', ''))
                 if model_value and model_value != "Unknown":
-                    # Primary: separate fields
                     extracted_data['model'] = model_value
                     extracted_data['trim'] = trim_value or "Base"
                     extracted_data['model_confidence'] = 1.0
                     extracted_data['trim_confidence'] = 1.0 if trim_value else 0.8
-                    # Transitional: keep combined model_trim for downstream compatibility
-                    combined = f"{model_value} {trim_value}".strip() if trim_value else model_value
-                    extracted_data['model_trim'] = combined
-                    extracted_data['model_trim_confidence'] = 1.0
                 else:
                     extracted_data['model'] = 'Unknown'
                     extracted_data['trim'] = 'Base'
                     extracted_data['model_confidence'] = 0.0
                     extracted_data['trim_confidence'] = 0.0
-                    extracted_data['model_trim'] = 'Unknown'
-                    extracted_data['model_trim_confidence'] = 0.0
                 
                 # Extract colors as separate fields (stop merging); adopt schema names
                 exterior_color, interior_color = extractor.extract_colors(listing.get('raw_text', ''))
@@ -211,7 +204,7 @@ class TransformationStep(BasePipelineStep):
     
     def _calculate_data_quality_score(self, extracted_data: Dict[str, Any]) -> float:
         """Calculate a data quality score based on extracted fields"""
-        # Prefer separate fields; keep model_trim for transition
+        # Prefer separate fields only
         quality_fields = ['year', 'price', 'mileage', 'model', 'trim', 'exterior', 'interior', 'source']
         total_fields = len(quality_fields)
         valid_fields = 0
@@ -340,8 +333,6 @@ class TransformationStep(BasePipelineStep):
                     'mileage_confidence': properties.get('mileage_confidence', ''),
                     'model': properties.get('model', ''),
                     'trim': properties.get('trim', ''),
-                    # Transitional combined field during rollout
-                    'model_trim': properties.get('model_trim', ''),
                     'model_confidence': properties.get('model_confidence', ''),
                     'trim_confidence': properties.get('trim_confidence', ''),
                     'exterior': properties.get('exterior', ''),

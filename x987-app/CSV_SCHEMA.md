@@ -7,7 +7,6 @@ Authoritative guidance for clean, extensible CSV output produced by the Python p
 - year: int (e.g., 2010)
 - model: string (e.g., Cayman)
 - trim: string (e.g., S)
-- model_trim: string (e.g., Cayman S) — transitional; may be removed later
 - asking_price_usd: int (raw dollars)
 - mileage: int (raw miles)
 - total_options_msrp: int (raw dollars)
@@ -21,7 +20,7 @@ Authoritative guidance for clean, extensible CSV output produced by the Python p
 
 Notes:
 - Keep values raw (no currency/k suffixes) for numeric fields. Formatting is FE’s job.
-- Provide separate `model` and `trim`. `model_trim` can remain during transition.
+- Provide separate `model` and `trim`.
 - Provide separate `exterior` and `interior`. Hex values are derived in FE only.
 
 ## Writing CSV (Python)
@@ -30,9 +29,9 @@ Notes:
 from csv import DictWriter
 
 FIELDS = [
-    'year','model','trim','model_trim',
+    'year','model','trim',
     'asking_price_usd','mileage','total_options_msrp','options_list',
-    'exterior','interior','exterior_hex','interior_hex',
+    'exterior','interior',
     'listing_url','source_url'
 ]
 
@@ -50,7 +49,7 @@ with open(out_csv, 'w', newline='', encoding='utf-8') as f:
 
 ## Backwards compatibility
 
-- During rollout, continue emitting `model_trim` while FE migrates fully. FE already prefers `model` + `trim` when present.
+- `model_trim` removed (2025‑09). Use `model` and `trim`.
 - Keep `exterior`/`interior` names authoritative; FE normalizes + maps to hex when missing.
 
 ## Filters & FE expectations

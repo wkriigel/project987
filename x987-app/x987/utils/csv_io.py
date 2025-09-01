@@ -23,11 +23,9 @@ logger = get_logger("utils.csv_io")
 # CSV field mappings for input/output
 CSV_FIELDS = {
     "input": [
-        # Prefer separate fields and new names; accept legacy during transition
+        # Separate fields only
         "source", "listing_url", "model", "trim", "year", "transmission_norm",
         "mileage", "asking_price_usd", "exterior", "interior",
-        # Legacy fallbacks
-        "price_usd", "exterior_color", "interior_color",
         "raw_options", "vin", "location"
     ],
     "output": [
@@ -126,36 +124,27 @@ def write_csv_output(listings: List[NormalizedListing], output_dir: str, filenam
             
             for i, listing in enumerate(listings, 1):
                 # Be resilient to attribute names across versions
-                def _get(obj, *names):
-                    for n in names:
-                        try:
-                            v = getattr(obj, n)
-                            return v
-                        except Exception:
-                            continue
-                    return None
-
                 row = {
                     "rank": i,
-                    "source": _get(listing, 'source'),
-                    "listing_url": _get(listing, 'listing_url'),
-                    "model": _get(listing, 'model'),
-                    "trim": _get(listing, 'trim'),
-                    "year": _get(listing, 'year'),
-                    "transmission_norm": _get(listing, 'transmission_norm'),
-                    "mileage": _get(listing, 'mileage'),
-                    "asking_price_usd": _get(listing, 'asking_price_usd', 'price_usd'),
-                    "fair_value_usd": _get(listing, 'fair_value_usd'),
-                    "deal_delta_usd": _get(listing, 'deal_delta_usd'),
-                    "exterior": _get(listing, 'exterior', 'exterior_color'),
-                    "interior": _get(listing, 'interior', 'interior_color'),
-                    "color_ext_bucket": _get(listing, 'color_ext_bucket'),
-                    "color_int_bucket": _get(listing, 'color_int_bucket'),
-                    "raw_options": _get(listing, 'raw_options'),
-                    "options_value": _get(listing, 'options_value'),
-                    "vin": _get(listing, 'vin'),
-                    "location": _get(listing, 'location'),
-                    "timestamp_run_id": _get(listing, 'timestamp_run_id')
+                    "source": getattr(listing, 'source', None),
+                    "listing_url": getattr(listing, 'listing_url', None),
+                    "model": getattr(listing, 'model', None),
+                    "trim": getattr(listing, 'trim', None),
+                    "year": getattr(listing, 'year', None),
+                    "transmission_norm": getattr(listing, 'transmission_norm', None),
+                    "mileage": getattr(listing, 'mileage', None),
+                    "asking_price_usd": getattr(listing, 'asking_price_usd', None),
+                    "fair_value_usd": getattr(listing, 'fair_value_usd', None),
+                    "deal_delta_usd": getattr(listing, 'deal_delta_usd', None),
+                    "exterior": getattr(listing, 'exterior', None),
+                    "interior": getattr(listing, 'interior', None),
+                    "color_ext_bucket": getattr(listing, 'color_ext_bucket', None),
+                    "color_int_bucket": getattr(listing, 'color_int_bucket', None),
+                    "raw_options": getattr(listing, 'raw_options', None),
+                    "options_value": getattr(listing, 'options_value', None),
+                    "vin": getattr(listing, 'vin', None),
+                    "location": getattr(listing, 'location', None),
+                    "timestamp_run_id": getattr(listing, 'timestamp_run_id', None)
                 }
                 writer.writerow(row)
         
