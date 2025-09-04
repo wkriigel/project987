@@ -31,6 +31,8 @@ export function App() {
   const exteriorFacets = useMemo(() => paintFacetCounts('exterior', data), [data])
   const interiorFacets = useMemo(() => paintFacetCounts('interior', data), [data])
   const [generation, setGeneration] = useState<GenerationValue>('all')
+  const [genCatalog, setGenCatalog] = useState<any | null>(null)
+  const [genCatalogStatus, setGenCatalogStatus] = useState<'idle'|'loading'|'ready'|'defaults'|'error'>('idle')
 
   useEffect(() => {
     let mounted = true
@@ -49,6 +51,91 @@ export function App() {
       }
     }
     load()
+    return () => { mounted = false }
+  }, [])
+
+  // Helper to find generation meta by key from API catalog
+  function findGenMeta(catalog: any, key: string) {
+    try {
+      const models: any[] = Array.isArray(catalog?.models) ? catalog.models : []
+      for (const m of models) {
+        const gens: any[] = Array.isArray(m?.generations) ? m.generations : []
+        for (const g of gens) {
+          if (g?.key === key) return g
+        }
+      }
+    } catch {}
+    return undefined
+  }
+
+  // Merge generations from catalog for the selected UI key (e.g., 'bx-987.2')
+  function getMergedGenerationMeta(catalog: any, selKey: string) {
+    const models: any[] = Array.isArray(catalog?.models) ? catalog.models : []
+    const dash = selKey.indexOf('-')
+    if (dash < 0) return undefined
+    const family = selKey.slice(0, dash).toLowerCase()
+    let code = selKey.slice(dash + 1)
+    // Normalize FE selection codes to JSON codes
+    //  - FE uses '982/718' for Boxster/Cayman; JSON uses '982'
+    if (code.toLowerCase() === '982/718' || code.toLowerCase() === '982 / 718') code = '982'
+    const familiesToModels: Record<string, string[]> = {
+      'bx': ['Boxster', 'Cayman'],
+      '911': ['911'],
+      'cayenne': ['Cayenne'],
+      'panamera': ['Panamera'],
+      'macan': ['Macan'],
+      'taycan': ['Taycan']
+    }
+    const targetModels = familiesToModels[family] || []
+    const trimsSet = new Set<string>()
+    const optionsMap = new Map<string, { display: string; msrp?: number }>()
+    let anyDefault = true
+    for (const m of models) {
+      if (!targetModels.includes(String(m?.name || ''))) continue
+      const gens: any[] = Array.isArray(m?.generations) ? m.generations : []
+      for (const g of gens) {
+        if (String(g?.code || '') !== code) continue
+        const gtrims: string[] = Array.isArray(g?.trims) ? g.trims : []
+        gtrims.forEach(t => { if (t) trimsSet.add(String(t)) })
+        const gopts: any[] = Array.isArray(g?.options) ? g.options : []
+        if (gopts.length) anyDefault = false
+        gopts.forEach((o: any) => {
+          const id = (o?.id || o?.display || '').toString()
+          if (!id) return
+          if (!optionsMap.has(id)) optionsMap.set(id, { display: (o?.display || id), msrp: typeof o?.msrp === 'number' ? o.msrp : undefined })
+        })
+      }
+    }
+    return {
+      trims: Array.from(trimsSet),
+      options: Array.from(optionsMap.values()).map(o => ({ display: o.display, msrp: o.msrp })),
+      options_default: anyDefault
+    }
+  }
+
+  // Load generation catalog (if provided by API); else we show defaults notice
+  useEffect(() => {
+    let mounted = true
+    async function loadCatalog() {
+      try {
+        setGenCatalogStatus('loading')
+        const res = await fetch('/api/catalog/generations')
+        const json = await res.json().catch(() => ({}))
+        if (!mounted) return
+        if (json && json.ok && json.source === 'json') {
+          setGenCatalog(json.data || null)
+          setGenCatalogStatus('ready')
+        } else {
+          setGenCatalog(null)
+          setGenCatalogStatus('defaults')
+        }
+      } catch {
+        if (!mounted) return
+        setGenCatalog(null)
+        setGenCatalogStatus('error')
+      }
+    }
+    loadCatalog()
     return () => { mounted = false }
   }, [])
 
@@ -343,7 +430,10 @@ export function App() {
         if (mode === 'and') return chosen.every(t => tags.has(t))
         return chosen.some(t => tags.has(t))
       },
-      render: (_, r) => optionsCompact(r.options_list)
+      render: (_, r) => {
+        const txt = optionsCompact(r.options_list)
+        return txt || '(no options detected)'
+      }
     },
     {
       title: 'Exterior',
@@ -482,6 +572,62 @@ export function App() {
               />
             </div>
 
+            {/* Minimal, plain-text generation metadata display */}
+            {generation !== 'all' && (
+              <div className="mt-2 text-xs md:text-sm">
+                {/* Trims line */}
+                <div>
+                  <strong>Trims:</strong>{' '}
+                  {(() => {
+                    try {
+                      if (genCatalogStatus === 'ready' && genCatalog) {
+                        const merged = getMergedGenerationMeta(genCatalog, String(generation))
+                        const trims = merged?.trims || []
+                        if (trims.length) return trims.join(', ')
+                        return '(defaults pending)'
+                      }
+                      return '(defaults pending)'
+                    } catch { return '(defaults pending)' }
+                  })()}
+                </div>
+                {/* Options line */}
+                <div>
+                  <strong>Options:</strong>{' '}
+                  {(() => {
+                    try {
+                      if (genCatalogStatus === 'ready' && genCatalog) {
+                        const merged = getMergedGenerationMeta(genCatalog, String(generation))
+                        const opts = (merged?.options || []).map((o: any) => {
+                          if (typeof o === 'string') return o
+                          const name = (o?.display || o?.id || '').toString().trim()
+                          const msrp = typeof o?.msrp === 'number' ? `$${o.msrp.toLocaleString()}` : null
+                          return msrp ? `${name} (${msrp})` : name
+                        }).filter(Boolean)
+                        if (opts.length) {
+                          return opts.join(', ')
+                        }
+                        return '(defaults pending)'
+                      }
+                      return '(defaults pending)'
+                    } catch { return '(defaults pending)' }
+                  })()}
+                </div>
+                {(() => {
+                  try {
+                    if (genCatalogStatus === 'ready' && genCatalog) {
+                      const merged = getMergedGenerationMeta(genCatalog, String(generation))
+                      if (merged?.options_default) return <div>(Using defaults for options)</div>
+                      return null
+                    }
+                    return null
+                  } catch { return null }
+                })()}
+                {genCatalogStatus !== 'ready' && (
+                  <div>(Using defaults; generation metadata not yet implemented)</div>
+                )}
+              </div>
+            )}
+
             {loading ? <Spin/> : error ? <Text type="danger">{error}</Text> : (
               <Table
                 size="small"
@@ -505,9 +651,56 @@ export function App() {
       label: 'Controls',
       children: (
         <div className="p-3">
-          <Card title="Config (read-only skeleton)">
-            <Text type="secondary">This tab will load and edit config.toml. (Scaffolded)</Text>
-          </Card>
+          <Space direction="vertical" size="middle" className="w-full">
+            <Card title="Config (read-only skeleton)">
+              <Text type="secondary">This tab will load and edit config.toml. (Scaffolded)</Text>
+            </Card>
+            <Card title="Generation Catalog (readable)">
+              {genCatalogStatus === 'ready' && genCatalog ? (
+                <div className="text-xs md:text-sm whitespace-pre-wrap">
+                  {Array.isArray(genCatalog?.models) && genCatalog.models.length > 0 ? (
+                    genCatalog.models.map((m: any) => (
+                      <div key={String(m?.name || Math.random())} style={{ marginBottom: 8 }}>
+                        <div><strong>Model:</strong> {String(m?.name || '')}</div>
+                        {Array.isArray(m?.generations) && m.generations.length > 0 ? (
+                          m.generations.map((g: any) => {
+                            const years = g?.years || {}
+                            const yr = [years?.min, years?.max].filter((v: any) => v != null).join('-')
+                            const trims: string[] = Array.isArray(g?.trims) ? g.trims : []
+                            const opts: any[] = Array.isArray(g?.options) ? g.options : []
+                            const optsText = opts.length
+                              ? opts.map(o => {
+                                  const name = (o?.display || o?.id || '').toString().trim()
+                                  const msrp = typeof o?.msrp === 'number' ? `$${o.msrp.toLocaleString()}` : null
+                                  return msrp ? `${name} (${msrp})` : name
+                                }).join(', ')
+                              : '(defaults pending)'
+                            return (
+                              <div key={String(g?.key || `${m?.name}-${g?.code}`)} style={{ marginLeft: 12, marginTop: 4 }}>
+                                <div>• {String(g?.code || '')} [{yr}]</div>
+                                <div style={{ marginLeft: 12 }}>Trims: {trims.length ? trims.join(', ') : '(none)'}</div>
+                                <div style={{ marginLeft: 12 }}>Options: {optsText}</div>
+                              </div>
+                            )
+                          })
+                        ) : (
+                          <div style={{ marginLeft: 12 }}>(no generations)</div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <Text type="secondary">No catalog data</Text>
+                  )}
+                </div>
+              ) : genCatalogStatus === 'defaults' ? (
+                <Text type="secondary">(defaults) Run the pipeline to export generation_catalog.json</Text>
+              ) : genCatalogStatus === 'loading' ? (
+                <Text type="secondary">Loading…</Text>
+              ) : (
+                <Text type="danger">Failed to load catalog</Text>
+              )}
+            </Card>
+          </Space>
         </div>
       )
     }

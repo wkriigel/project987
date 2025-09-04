@@ -79,9 +79,9 @@ class TransformationStep(BasePipelineStep):
             print("🔍 Step 1: Extracting basic properties...")
             extracted_properties = self._extract_basic_properties(scraping_data)
 
-            # Step 2: Detect options using modular options system
+            # Step 2: Detect options using modular options system (with model/year context)
             print("🔧 Step 2: Detecting options...")
-            options_data = self._detect_options(scraping_data)
+            options_data = self._detect_options(scraping_data, extracted_properties)
 
             # Step 3: Create single unified transformed CSV
             print("📄 Step 3: Creating unified transformed CSV...")
@@ -216,14 +216,15 @@ class TransformationStep(BasePipelineStep):
         
         return valid_fields / total_fields if total_fields > 0 else 0.0
     
-    def _detect_options(self, scraping_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _detect_options(self, scraping_data: List[Dict[str, Any]], extracted_properties: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Detect options using modular options system"""
         print("   🔧 Using modular options system...")
         
         try:
-            # Import our modular options system
+            # Import modular options + config helpers
             from ...options import get_registry
             from ...config import get_config
+            from ...options.value_overrides import get_override_value
             
             options_registry = get_registry()
             all_options = options_registry.get_all_options()
@@ -253,24 +254,44 @@ class TransformationStep(BasePipelineStep):
                 }
                 
                 raw_text = listing.get('raw_text', '')
+                # Context from extracted properties
+                props = extracted_properties[i] if i < len(extracted_properties) else {}
+                trim = props.get('trim') or None
+                model = props.get('model') or None
+                year_raw = props.get('year')
+                try:
+                    year = int(year_raw) if isinstance(year_raw, str) and year_raw.isdigit() else (int(year_raw) if isinstance(year_raw, (int, float)) else None)
+                except Exception:
+                    year = None
                 
                 # Check each available option
                 for option in all_options:
                     try:
-                        if hasattr(option, 'is_present') and option.is_present(raw_text):
+                        # Option presence (pass trim if supported)
+                        present = option.is_present(raw_text, trim) if 'is_present' in dir(option) else False
+                        if present:
                             option_info = {
                                 'id': getattr(option, 'get_id', lambda: 'unknown')(),
                                 'display': getattr(option, 'get_display', lambda: 'Unknown Option')(),
                                 'category': getattr(option, 'get_category', lambda: 'unknown')(),
-                                'value': getattr(option, 'get_value', lambda x: 0)(raw_text),
+                                # Base value first, then override per model/generation if available
+                                'value': getattr(option, 'get_value', lambda x, y=None: 0)(raw_text, trim),
                                 'confidence': getattr(option, 'get_confidence', lambda: 1.0)()
                             }
                             
+                            # Override value per generation if configured
+                            opt_id = str(option_info['id'])
+                            override_val = get_override_value(opt_id, model, year)
+                            if override_val is not None:
+                                option_info['value'] = int(override_val)
+
                             listing_options['detected_options'].append(option_info)
                             listing_options['total_options_value'] += option_info['value']
                             # Add MSRP if available for this option id
-                            opt_id = str(option_info['id'])
-                            if opt_id in msrp_catalog_norm:
+                            # Prefer generation override as MSRP if present; else fallback to default catalog
+                            if override_val is not None:
+                                listing_options['total_options_msrp'] += int(override_val)
+                            elif opt_id in msrp_catalog_norm:
                                 listing_options['total_options_msrp'] += int(msrp_catalog_norm[opt_id])
                             
                             # Group by category

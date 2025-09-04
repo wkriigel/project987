@@ -3,7 +3,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { parseCsvToJson } from './utils/csv';
-import { findResultsDir, findConfigPath, findLatestRankingCsv } from './utils/fsPaths';
+import { findResultsDir, findConfigPath, findLatestRankingCsv, findGenerationCatalogJson } from './utils/fsPaths';
 
 const app = express();
 app.use(cors());
@@ -65,6 +65,21 @@ app.put('/api/config', (req, res) => {
     res.json({ ok: true, backup: backupName });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'config write error' });
+  }
+});
+
+// Generation catalog for FE: trims and options per generation
+// Source of truth: a generated JSON file produced from Python config (if available).
+// If not present, respond with a defaults flag so FE can show placeholder text.
+app.get('/api/catalog/generations', (_req, res) => {
+  const p = findGenerationCatalogJson();
+  if (!p) return res.json({ ok: true, source: 'defaults', data: { models: [] } });
+  try {
+    const raw = fs.readFileSync(p, 'utf-8');
+    const data = JSON.parse(raw);
+    return res.json({ ok: true, source: 'json', path: p, data });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message || 'catalog read error' });
   }
 });
 
