@@ -71,9 +71,9 @@ options = detector.detect_options("Sport Chrono Package, PASM, PSE exhaust")
 #          ("PASM", 800, "performance"), 
 #          ("Sport Exhaust (PSE)", 800, "performance")]
 
-# Get total value
+# Get total MSRP (sum of per-option MSRP)
 total_value = detector.get_options_value("Sport Chrono Package, PASM, PSE exhaust")
-# Returns: 2600
+# Returns: 2600 (represents MSRP total in MSRP-only mode)
 
 # Get categorized options
 by_category = detector.get_options_by_category("Sport Chrono Package, PASM, PSE exhaust")
@@ -89,7 +89,7 @@ summary = detector.get_detailed_options_summary("Sport Chrono Package, PASM, PSE
 # Summary contains:
 # {
 #     "total_options": 3,
-#     "total_value": 2600,
+#     "total_value": 2600,  # MSRP total in MSRP-only mode
 #     "by_category": {
 #         "performance": {
 #             "options": ["Sport Chrono Package Plus", "PASM", "Sport Exhaust (PSE)"],
@@ -123,7 +123,7 @@ summary = detector.get_detailed_options_summary(listing.raw_options, listing.tri
 # Update listing with options data
 listing.options_summary = summary
 listing.options_detected = summary['all_options']
-listing.options_value = summary['total_value']
+listing.options_value = summary['total_value']  # MSRP total in MSRP-only mode
 listing.options_by_category = summary['by_category']
 ```
 
@@ -149,6 +149,32 @@ patterns = [
 standard_on_trims = []
 ```
 
+### Generation MSRP Overrides
+
+You can override option MSRP per model/generation using `[options_per_generation]`:
+
+```toml
+[options_per_generation.defaults]
+top_options = ["639/640", "PASM", "PSE", "LSD", "Sport Seats", "HTD", "PCM", "BOSE", "BIX", "19W", "PARK"]
+
+[options_per_generation.911]
+  [options_per_generation.911."996".msrp]
+  PASM = 1990
+  "639/640" = 920
+  PSE = 2400
+  X51 = 15000
+  "Sport Seats" = 1550
+  HTD = 500
+  BOSE = 1390
+  PCM = 3070
+  LSD = 950
+  SHORT_SHIFTER = 765
+  BIX = 1090
+  DIM_RAIN = 690
+  SPORT_WHEEL = 330
+  "19W" = 2000
+```
+
 ## Testing
 
 Run the test script to see the system in action:
@@ -169,16 +195,17 @@ This will demonstrate:
 The enhanced options system integrates with the report display:
 
 1. **Options Summary Panel**: Shows total options detected and values by category
-2. **Main Table**: Displays detected options in a clean, readable format
+2. **Main Table**: Displays detected options and Options MSRP Total in a clean, readable format
 3. **Fallback Support**: Gracefully handles cases where options aren't detected
 
 ## Benefits
 
 1. **Accurate Detection**: Multiple patterns catch options even with different wording
-2. **Value Calculation**: Automatic calculation of options value for fair value analysis
+2. **MSRP Aggregation**: Automatic aggregation of Options MSRP Total
 3. **Categorization**: Logical grouping makes it easy to understand what's included
 4. **Trim Awareness**: Correctly handles standard equipment on special trims
 5. **Extensible**: Easy to add new options and patterns via configuration
+6. **Transmission Assumption**: Transmissions (PDK/Tiptronic) are assumed and not counted as options.
 
 ## Future Enhancements
 

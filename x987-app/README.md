@@ -1,13 +1,15 @@
 # View-from-CSV v4.5
 
-A data processing and visualization application that transforms scraped CSV data of 987.2 Cayman/Boxster listings into a ranked, scannable table with a fair-value pricing model.
+A data processing and visualization application that transforms scraped CSV data of 987.2 Cayman/Boxster listings into a ranked, scannable table.
+
+Note: In MSRP-only mode (`pricing_mode = "msrp_only"`, the default), Fair Value and Deal calculations are disabled. The pipeline ranks listings by Options MSRP Total, and any `fair_value` config is ignored.
 
 ## Features
 
 - **Multi-Source Support**: Collect listings from Cars.com, TrueCar, and Carvana via AutoTempest
 - **Universal Scraper**: Single engine with site-specific profiles for reliable data extraction
-- **Fair Value Model**: Configurable pricing algorithm with options detection
-- **Smart Ranking**: Sort by deal delta (fair value minus asking price) with transmission grouping
+- **MSRP Options Total**: Aggregates per-option MSRP using generation overrides + catalog
+- **Ranking**: Sort by Options MSRP total (descending) with transmission grouping
 - **Options Detection**: Advanced pattern matching for car options with configurable values
 - **Lean Architecture**: Fast iteration cycles with isolated testing capabilities
 
@@ -47,7 +49,7 @@ The setup script will:
    python -m x987
    ```
 
-This will execute the complete pipeline: collect → scrape → transform → dedupe → fair value → rank → report.
+This will execute the complete pipeline: collect → scrape → transform → dedupe → rank (MSRP) → report.
 
 ## Configuration
 
@@ -61,14 +63,9 @@ urls = [
 ]
 ```
 
-### Fair Value Model
+### Pricing Mode
 ```toml
-[fair_value]
-base_value_usd = 30500
-year_step_usd = 500
-s_premium_usd = 7000
-exterior_color_usd = 300
-interior_color_usd = 300
+pricing_mode = "msrp_only"  # or "current" for legacy behavior
 ```
 
 ### Scraping Settings
@@ -95,8 +92,8 @@ python -m x987 collect      # Collect URLs
 python -m x987 scrape       # Scrape vehicles
 python -m x987 transform    # Normalize data
 python -m x987 dedupe       # Remove duplicates
-python -m x987 fairvalue    # Calculate fair values
-python -m x987 rank         # Rank by deal delta
+python -m x987 fairvalue    # No-op in MSRP-only mode
+python -m x987 rank         # Rank by Options MSRP total
 
 # Display final ranked view from latest results
 python -m x987 view-step
@@ -114,7 +111,7 @@ The application generates several output files in the `x987-data` directory:
 
 - **Raw data**: Timestamped CSV files from scraping
 - **Normalized data**: Processed and cleaned listings
-- **Final results**: Ranked listings with fair values and deal deltas
+- **Final results**: Ranked listings by Options MSRP total
 - **Terminal report**: Formatted table for quick scanning
 
 ## Architecture
@@ -124,16 +121,15 @@ The application generates several output files in the `x987-data` directory:
 - **Collector**: AutoTempest-based URL collection
 - **Universal Scraper**: Single VDP processing engine with site profiles
 - **Data Normalizer**: Consistent formatting and validation
-- **Options Detector**: Pattern-based option detection and valuation
-- **Fair Value Engine**: Configurable pricing model
+- **Options Detector**: Pattern-based option detection and MSRP aggregation
 - **Display Renderer**: Terminal-friendly table output
 
 ### Data Flow
 
 1. **Collection**: AutoTempest URLs → Collector
 2. **Scraping**: URLs → Universal VDP Scraper → Raw Data
-3. **Processing**: Raw Data → Normalizer → Options Detector → Valuation Engine
-4. **Output**: Valuation Engine → Display Renderer → Formatted Table
+3. **Processing**: Raw Data → Normalizer → Options Detector (MSRP aggregation)
+4. **Output**: Ranked by MSRP → Display Renderer → Formatted Table
 
 ### File Structure
 
@@ -160,42 +156,13 @@ x987-data/                   # Output data
 └── meta/                    # Metadata and logs
 ```
 
-## Fair Value Model
+## Options MSRP Aggregation
 
-The application calculates fair value using a configurable formula:
+The system detects options using pattern matching and aggregates MSRP:
 
-```
-Fair Value = Base + Trim Premium + Year Step + Mileage Bonus + Color Bonus + Options Total
-Deal Δ = Fair Value - Asking Price
-```
-
-### Base Values
-- **Base Car**: $30,500 (2009 Base, Automatic, 60-79k miles, mono/mono, no options)
-- **Year Step**: +$500 per year from 2009
-- **Trim Premiums**: S ($7,000), R ($30,000), Black Edition ($1,500), Boxster Spyder ($30,000)
-
-### Mileage Bands
-- <40k: +$3,000
-- 40-59k: +$1,500
-- 60-79k: +$0 (neutral)
-- 80-99k: -$4,000
-- 100k-119k: -$9,000
-- ≥120k: -$15,000
-
-### Options Detection
-
-The system detects options using pattern matching and assigns configurable values:
-
-- **LSD**: $1,200
-- **Sport Chrono**: $1,000
-- **Sport Exhaust**: $800
-- **PASM**: $800
-- **19" Wheels**: $400
-- **BOSE**: $300
-- **PCM/Nav**: $300
-- **Bi-Xenon**: $250
-- **Heated/Cooled Seats**: $150
-- **Sport Seats**: $500
+- Per‑generation overrides from `[options_per_generation]` take precedence
+- Then falls back to `options_v2.msrp_catalog`
+- If unknown, a default MSRP of `494` is used
 
 ## Development
 
