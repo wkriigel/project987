@@ -1,0 +1,11 @@
+scraping_id,source_url,scraping_status,validation_status,validation_score,scraping_timestamp
+1,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:48:48.442189
+2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:48:50.049015
+3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:48:52.147967
+4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:48:54.771174
+5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:48:56.905691
+7,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:49:01.086527
+8,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:49:05.455306
+9,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:49:09.215286
+10,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:49:13.917518
+6,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-04T16:49:14.304400

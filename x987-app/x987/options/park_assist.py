@@ -26,7 +26,9 @@ class ParkAssistOption:
             r"\bparking\s+aid\b",
             r"\bparking\s+sensors\b",
             r"\brear\s+parking\s+sensors\b",
-            r"\bfront\s+parking\s+sensors\b"
+            r"\bfront\s+parking\s+sensors\b",
+            r"\bpark\s+pilot\b",
+            r"\bpark\s+assist\s+system\b"
         ]
         
         # Compile patterns for efficient matching

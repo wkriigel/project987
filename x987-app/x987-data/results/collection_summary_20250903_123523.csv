@@ -1,0 +1,6 @@
+source_url,urls_collected,collection_timestamp,processing_status
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,13,2025-09-03T12:35:23.759560,success
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214,12,2025-09-03T12:35:23.759581,success
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,51,2025-09-03T12:35:23.759594,success
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=cayman&transmission=auto&zip=30214,26,2025-09-03T12:35:23.759605,success
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,99,2025-09-03T12:35:23.759614,success

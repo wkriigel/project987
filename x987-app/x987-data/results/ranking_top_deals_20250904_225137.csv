@@ -1,0 +1,8 @@
+category,source_url,year,model,price,deal_delta_usd,composite_score,rank
+overall_top_5_1,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2009,Cayman,"$31,967",5533,1572.2398,1
+overall_top_5_2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2009,Cayman,"$37,995",1005,1123.837,2
+overall_top_5_3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2009,Cayman,"$43,337",-4337,589.519,3
+overall_top_5_4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2011,Cayman,"$42,973",-5273,495.6938999999999,4
+overall_top_5_5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2009,Cayman,"$32,987",-2487,-227.86,5
+best_deal,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2009,Cayman,"$31,967",5533,1572.2398,1
+best_value,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,2009,Cayman,"$31,967",5533,1572.2398,1

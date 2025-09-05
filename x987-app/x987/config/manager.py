@@ -121,9 +121,6 @@ class ConfigManager:
         """Get scraping configuration"""
         return self.get('scraping', {})
     
-    def get_fair_value_config(self) -> Dict[str, Any]:
-        """Get fair value configuration"""
-        return self.get('fair_value', {})
 
     def get_options_config(self) -> Dict[str, Any]:
         """Get options configuration"""
@@ -147,7 +144,6 @@ class ConfigManager:
             'search_urls_count': len(self.get_search_urls()),
             'scraping_concurrency': self.get('scraping.concurrency'),
             'scraping_polite_delay_ms': self.get('scraping.polite_delay_ms'),
-            'fair_value_base': self.get('fair_value.base_value_usd'),
             'options_enabled': self.get('options_v2.enabled')
         }
 

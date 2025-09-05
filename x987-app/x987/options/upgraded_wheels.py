@@ -38,7 +38,11 @@ class UpgradedWheelsOption:
             r"\bpremium\s+wheels\b",
             r"\bsport\s+wheels\b",
             r"\b19\s*inch\s+alloy\s+wheels\b",
-            r"\b18\s*inch\s+alloy\s+wheels\b"
+            r"\b18\s*inch\s+alloy\s+wheels\b",
+            # Common wheel codes (911)
+            r"\b404\b",
+            r"\b405\b",
+            r"\b446\b"
         ]
         
         # Compile patterns for efficient matching

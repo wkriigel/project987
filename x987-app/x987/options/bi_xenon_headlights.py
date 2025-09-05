@@ -29,7 +29,11 @@ class BiXenonHeadlightsOption:
             r"\bdynamic\s+cornering\s+lights\b",
             r"\bcornering\s+lights\b",
             r"\badaptive\s+headlights\b",
-            r"\badaptive\s+lighting\b"
+            r"\badaptive\s+lighting\b",
+            r"\b601\b",
+            r"\bpdls\b",
+            r"\b8ju\b",
+            r"\b8is\b"
         ]
         
         # Compile patterns for efficient matching

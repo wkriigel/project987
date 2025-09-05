@@ -19,7 +19,9 @@ class PDK(BaseOption):
                 r"\b7[-\s]?speed\b",
                 r"\bautomatic\b",
                 r"\bauto\b",
-                r"\btiptronic\b"
+                r"\btiptronic\b",
+                r"\b249\b",
+                r"\b250\b"
             ],
             category="transmission"
         )

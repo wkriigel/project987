@@ -1,0 +1,7 @@
+scraping_id,source_url,scraping_status,validation_status,validation_score,scraping_timestamp
+2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-05T16:50:29.712153
+1,https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,success,invalid,0,2025-09-05T16:50:30.100116
+3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-05T16:50:33.915321
+4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-05T16:50:33.919671
+5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-05T16:50:37.438540
+6,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214,success,invalid,0,2025-09-05T16:50:38.652813

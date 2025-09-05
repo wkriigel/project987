@@ -26,8 +26,6 @@ class NormalizedListing:
 
     # Pricing
     asking_price_usd: Optional[int] = None
-    fair_value_usd: Optional[int] = None
-    deal_delta_usd: Optional[int] = None
 
     # Colors (separate fields per schema)
     exterior: Optional[str] = None
@@ -38,7 +36,7 @@ class NormalizedListing:
     # Options
     raw_options: Optional[str] = None
     options_list: Optional[List[str]] = field(default_factory=list)
-    options_value: Optional[int] = None
+    # deprecated legacy fields removed: options_value
     options_summary: Optional[Dict[str, Any]] = None
     options_detected: Optional[List[str]] = None
     options_by_category: Optional[Dict[str, Any]] = None
@@ -69,7 +67,7 @@ try:
         interior: Optional[str]
         listing_url: Optional[str]
         source_url: Optional[str]
-        deal_delta_usd: Optional[int]
+        # deal_delta_usd removed
 except Exception:
     # Fallback if TypedDict unavailable
     ListingData = Dict[str, Any]  # type: ignore

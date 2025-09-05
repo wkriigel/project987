@@ -30,10 +30,7 @@ def validate_config(config: Dict[str, Any]) -> None:
         _validate_required_sections(config)
         _validate_search_section(config.get('search', {}))
         _validate_scraping_section(config.get('scraping', {}))
-        # In MSRP-only mode, fair_value section is optional (soft-deprecated)
-        mode = str(config.get('pricing_mode', 'msrp_only')).lower()
-        if mode != 'msrp_only':
-            _validate_fair_value_section(config.get('fair_value', {}))
+        # Fair value configuration removed in MSRP-only cleanup
         _validate_pricing_mode(config.get('pricing_mode', 'msrp_only'))
         _validate_options_section(config.get('options_v2', {}))
         _validate_pipeline_section(config.get('pipeline', {}))
@@ -49,10 +46,7 @@ def validate_config(config: Dict[str, Any]) -> None:
 def _validate_required_sections(config: Dict[str, Any]) -> None:
     """Validate that required configuration sections exist"""
     required_sections = ['search', 'scraping']
-    # fair_value is only required in non-MSRP-only modes
-    mode = str(config.get('pricing_mode', 'msrp_only')).lower()
-    if mode != 'msrp_only':
-        required_sections.append('fair_value')
+    # fair_value removed in MSRP-only cleanup
     
     for section in required_sections:
         if section not in config:
@@ -117,32 +111,8 @@ def _validate_pricing_mode(mode: Any) -> None:
         raise ConfigError(f"pricing_mode must be one of {sorted(allowed)}")
 
 def _validate_fair_value_section(fair_value_config: Dict[str, Any]) -> None:
-    """Validate fair value configuration section"""
-    required_keys = ['base_value_usd', 'year_step_usd']
-    
-    for key in required_keys:
-        if key not in fair_value_config:
-            raise ConfigError(f"Fair value configuration must contain '{key}'")
-    
-    # Validate base value
-    base_value = fair_value_config['base_value_usd']
-    if not isinstance(base_value, (int, float)) or base_value < 0:
-        raise ConfigError("Fair value base value must be a non-negative number")
-    
-    # Validate year step
-    year_step = fair_value_config['year_step_usd']
-    if not isinstance(year_step, (int, float)) or year_step < 0:
-        raise ConfigError("Fair value year step must be a non-negative number")
-    
-    # Validate special trim premiums if present
-    if 'special_trim_premiums' in fair_value_config:
-        premiums = fair_value_config['special_trim_premiums']
-        if not isinstance(premiums, dict):
-            raise ConfigError("Special trim premiums must be a dictionary")
-        
-        for trim, premium in premiums.items():
-            if not isinstance(premium, (int, float)) or premium < 0:
-                raise ConfigError(f"Special trim premium for '{trim}' must be a non-negative number")
+    """Deprecated: kept for backward compatibility (no validation)."""
+    return
 
 def _validate_options_section(options_config: Dict[str, Any]) -> None:
     """Validate options configuration section"""

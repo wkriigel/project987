@@ -550,7 +550,7 @@ Examples:
     
     parser.add_argument(
         'command',
-        choices=['pipeline', 'collect', 'scrape', 'transform', 'dedupe', 'fair_value', 'rank', 'view-step', 'transform-step', 'info', 'config', 'doctor'],
+        choices=['pipeline', 'collect', 'scrape', 'transform', 'dedupe', 'rank', 'view-step', 'transform-step', 'info', 'config', 'doctor'],
         help='Pipeline command to execute'
     )
     
@@ -588,7 +588,6 @@ Examples:
         'scrape': cmd_scrape,
         'transform': cmd_transform,
         'dedupe': cmd_dedupe,
-        'fair_value': cmd_fair_value,
         'rank': cmd_rank,
         # Removed: 'view' (modular view removed)
         'view-step': cmd_view_step,

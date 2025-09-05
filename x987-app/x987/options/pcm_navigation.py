@@ -27,7 +27,9 @@ class PCMNavigationOption:
             r"\bpremium\s+communication\s+module\b",
             r"\bcommunication\s+module\b",
             r"\bpremium\s+communication\b",
-            r"\bpremium\s+communication\s+system\b"
+            r"\bpremium\s+communication\s+system\b",
+            r"\b670\b",
+            r"\bi8t\b"
         ]
         
         # Compile patterns for efficient matching

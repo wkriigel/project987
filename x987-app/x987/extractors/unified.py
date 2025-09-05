@@ -60,12 +60,6 @@ class UnifiedExtractor:
         
         return "unknown"
     
-    def extract_deal_delta(self, fair_value: int, asking_price: int) -> Optional[int]:
-        """Calculate deal delta (backward compatibility)"""
-        result = self.registry.extract_field("deal_delta", "", 
-                                           fair_value=fair_value, 
-                                           asking_price=asking_price)
-        return result.value if result else None
     
     def extract_all(self, text: str, url: str = None) -> Dict[str, Any]:
         """Extract all available fields from text"""
@@ -88,9 +82,6 @@ class UnifiedExtractor:
         
         # Extract all fields with detailed results
         for field_name, extractor in self.registry.get_extractors_by_field().items():
-            if field_name == "deal_delta":
-                # Skip deal delta as it requires additional parameters
-                continue
                 
             result = extractor.extract(text)
             if result:
@@ -143,6 +134,4 @@ def extract_source_from_text(text: str, url: str = None) -> str:
     """Extract source from text or URL (backward compatibility)"""
     return UNIFIED_EXTRACTOR.extract_source(text, url)
 
-def extract_deal_delta(fair_value: int, asking_price: int) -> Optional[int]:
-    """Calculate deal delta (backward compatibility)"""
-    return UNIFIED_EXTRACTOR.extract_deal_delta(fair_value, asking_price)
+# Deal delta extraction removed in MSRP-only cleanup

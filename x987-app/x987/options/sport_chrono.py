@@ -28,7 +28,9 @@ class SportChronoOption:
             r"\bchrono\s+package\s+plus\b",
             r"\bsport\s+chrono\s+package\b",
             r"\bchrono\b",
-            r"\bsport\s+chrono\s+package\s+plus\b"
+            r"\bsport\s+chrono\s+package\s+plus\b",
+            r"\b640\b",
+            r"\b639\b"
         ]
         
         # Compile patterns for efficient matching

@@ -27,7 +27,11 @@ class SportSeatsOption:
             r"\badaptive\s+sport\s+bucket\s+seats\b",
             r"\bbucket\s+seats\b",
             r"\bsport\s+seating\b",
-            r"\badaptive\s+sport\s+seating\b"
+            r"\badaptive\s+sport\s+seating\b",
+            r"\bp01\b",
+            r"\b982\b",
+            r"\bq2j\b",
+            r"\bq1j\b"
         ]
         
         # Compile patterns for efficient matching

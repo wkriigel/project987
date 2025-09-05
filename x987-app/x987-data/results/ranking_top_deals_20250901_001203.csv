@@ -1,0 +1,8 @@
+category,source_url,year,model,price,deal_delta_usd,composite_score,rank
+overall_top_5_1,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2003,911,"$6,100",27600,2780.337,1
+overall_top_5_2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2001,911,"$12,750",23250,2355.01,2
+overall_top_5_3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2000,911,"$14,858",20142,2033.5322,3
+overall_top_5_4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2000,911,"$14,850",20150,2030.7279,4
+overall_top_5_5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,1999,911,"$16,890",18810,1896.5062,5
+best_deal,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2003,911,"$6,100",27600,2780.337,1
+best_value,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2003,911,"$6,100",27600,2780.337,1
