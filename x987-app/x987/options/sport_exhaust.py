@@ -27,7 +27,10 @@ class SportExhaustOption:
             r"\bdual\s+exhaust\b",
             r"\bstainless\s+steel\s+dual\s+exhaust\b",
             r"\bexhaust\s+system\b",
-            r"\bsport\s+exhaust\s+with\s+dual\s+tailpipes\b"
+            r"\bsport\s+exhaust\s+with\s+dual\s+tailpipes\b",
+            r"\bxlf\b",
+            r"\b09991\b",
+            r"\b0p9\b"
         ]
         
         # Compile patterns for efficient matching

@@ -25,7 +25,8 @@ class LimitedSlipDifferentialOption:
             r"\blsd\b",
             r"\blimited\s+slip\s+differential\b",
             r"\bbrake\s+actuated\s+limited\s+slip\b",
-            r"\bmechanical\s+limited\s+slip\b"
+            r"\bmechanical\s+limited\s+slip\b",
+            r"\b220\b"
         ]
         
         # Compile patterns for efficient matching

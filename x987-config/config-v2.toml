@@ -8,28 +8,6 @@ urls = [
      "https://www.autotempest.com/results?keywords=gts&localization=country&make=porsche&maxmiles=70000&maxprice=50000&maxyear=2018&minmiles=15000&minprice=20000&minyear=2015&model=macan&transmission=auto&zip=30214",
 ]
 
-[fair_value]
-# Data-driven baselines from current dataset
-base_value_usd = 32800          # Cayman Base baseline (was 30500)
-s_premium_usd = 3900            # Cayman S premium over Cayman Base (was 7000)
-
-# New: Boxster-specific baselines (observed large gap vs Cayman)
-boxster_base_value_usd = 22100  # Boxster Base
-boxster_s_premium_usd = 11100   # Boxster S premium over Boxster Base
-
-# New: continuous drivers
-mileage_penalty_per_mile = -0.156   # ≈ -$156 per 1k miles
-options_multiplier = 1.61           # multiplier applied to summed catalog values
-
-# Year/color still supported for compatibility (kept as-is)
-year_step_usd = 500
-exterior_color_usd = 300
-interior_color_usd = 300
-
-[fair_value.special_trim_premiums]
-"Cayman R" = 30000
-"Boxster Spyder" = 30000
-"Black Edition" = 6000  # updated from 1500 based on observed premium vs Cayman S
 
 [scraping]
 concurrency = 2

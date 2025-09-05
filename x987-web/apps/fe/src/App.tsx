@@ -323,7 +323,7 @@ export function App() {
       }
     },
     {
-      title: 'MSRP',
+      title: 'Opt $',
       key: 'msrp',
       align: 'right',
       sorter: (a,b) => (toInt(a.total_options_msrp)||0) - (toInt(b.total_options_msrp)||0),

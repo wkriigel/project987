@@ -11,6 +11,7 @@ RISK: Low - extraction logic is centralized and tested
 
 import re
 from typing import Optional, Tuple, Dict, Any
+from x987.vehicles import detect_model_and_trim
 
 # =========================
 # MILEAGE EXTRACTION
@@ -352,34 +353,46 @@ def extract_vehicle_info_unified(text: str) -> Tuple[Optional[int], Optional[str
     trim = None
     
     # Extract year
-    year_match = re.search(r'\b(20\d\d)\b', text)
+    year_match = re.search(r'\b(19\d\d|20\d\d)\b', text)
     if year_match:
         year = int(year_match.group(1))
     
-    # Extract Porsche model
-    model_match = re.search(r'\b(Cayman|Boxster)\b', text, re.I)
-    if model_match:
-        model = model_match.group(1).title()
-    
-    # Extract trim (Porsche-specific logic)
-    if model:
-        # Special trims
-        if re.search(r'\bCayman\s+R\b', text, re.I):
-            trim = "R"
-        elif re.search(r'\bBoxster\s+Spyder\b', text, re.I):
-            trim = "Spyder"
-        elif re.search(r'\bBlack\s+Edition\b', text, re.I):
+    # Extract model/trim using config-driven catalog (supports 911 and more; year-aware)
+    model, trim = detect_model_and_trim(text, year)
+
+    # Fallbacks for legacy Cayman/Boxster logic if model/trim not found
+    if not model:
+        model_match = re.search(r'\b(Cayman|Boxster|911)\b', text, re.I)
+        if model_match:
+            model = model_match.group(1).title()
+    if model and not trim:
+        if re.search(r'\bBlack\s+Edition\b', text, re.I):
             trim = "Black Edition"
-        # Explicit S in title
+        elif re.search(r'\b(Boxster)\s+Spyder\b', text, re.I):
+            trim = "Spyder"
         elif re.search(r'\b(Cayman|Boxster)\s+S\b', text, re.I):
             trim = "S"
-        # Explicit Base hints
-        elif re.search(r'\bCayman\s+Base\b', text, re.I):
-            trim = "Base"
-        # Default to Base when title is neutral
+        elif re.search(r'\b(911)\s+Carrera\s+4S\b', text, re.I):
+            trim = "Carrera 4S"
+        elif re.search(r'\b(911)\s+Carrera\s+4\b', text, re.I):
+            trim = "Carrera 4"
+        elif re.search(r'\b(911)\s+Carrera\s+S\b', text, re.I):
+            trim = "Carrera S"
+        elif re.search(r'\b(911)\s+Carrera\b', text, re.I):
+            trim = "Carrera"
+        elif re.search(r'\b(911)\s+Targa\b', text, re.I):
+            trim = "Targa"
+        elif re.search(r'\b(911)\s+Turbo\b', text, re.I):
+            trim = "Turbo"
+        elif re.search(r'\b(911)\s+GT3\b', text, re.I):
+            trim = "GT3"
+        elif re.search(r'\b(911)\s+GT2\b', text, re.I):
+            trim = "GT2"
         else:
-            trim = "Base"
-    
+            # Default to Base for Cayman/Boxster; leave None for 911 when unknown
+            if model in {"Cayman", "Boxster"}:
+                trim = "Base"
+
     return year, model, trim
 
 # =========================

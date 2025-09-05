@@ -1,0 +1,49 @@
+import { Meta, Source } from '@storybook/blocks'
+
+<Meta title="Guides/Generation Filter" />
+
+# Generation Filter
+
+The Generation control filters Results by year range and model family using a data-driven catalog. It is built from two pieces:
+
+- `FilterSelect`: a generic, reusable labeled Select with support for grouped, non-selectable headings and search.
+- Generation catalog: grouped definitions of model families (e.g., Boxster/Cayman, 911) and generation items (e.g., `987.1 (2005-2008)`).
+
+## How it works
+
+- The dropdown shows an `All` option plus grouped headings for each family. Each item label includes the code, year range, and a dynamic count of matching rows from the current dataset.
+- When a generation is selected, the app filters the Table dataSource by:
+  - Year within the item’s `[min..max]` range, and
+  - Normalized model text containing one of the item’s `models` tags (e.g., `boxster`, `cayman`).
+- Existing column filters remain intact; the generation filter narrows the dataSource prior to Table filters/sorts.
+
+## Key APIs
+
+<Source
+  code={`// Build grouped options with counts from dataset
+import { generationOptionsAll, GENERATION_CATALOG } from '@/lib/generation'
+const options = generationOptionsAll(data)
+
+// Apply filter to current dataset
+import { applyGenerationFilter } from '@/lib/filters'
+const filtered = applyGenerationFilter(data, generationKey)
+
+// Use in UI
+<FilterSelect label="Generation" value={generationKey} onChange={setGenerationKey} options={options} />
+`} language="tsx" />
+
+## Extending the catalog
+
+- Add a generation: edit `GENERATION_CATALOG` in `src/lib/generation.ts` and provide:
+  - `key`: unique key combining family + code (e.g., `911-996`)
+  - `code`: short label (e.g., `996`)
+  - `years`: `{ min, max? }`
+  - `models`: normalized tags included by the model/trim string (e.g., `['boxster', 'cayman']`)
+- Counts update automatically based on the loaded dataset.
+
+## UX guidance
+
+- Keep headings non-selectable to visually separate families.
+- Include year ranges in labels to avoid ambiguity.
+- Consider enabling search (default) for faster navigation.
+

@@ -25,7 +25,9 @@ class HeatedSeatsOption:
             r"\bseat\s+heating\b",
             r"\bheated\s+front\s+seats\b",
             r"\bheated\s+driver\s+seat\b",
-            r"\bheated\s+passenger\s+seat\b"
+            r"\bheated\s+passenger\s+seat\b",
+            r"\b342\b",
+            r"\b4a3\b"
         ]
         
         # Compile patterns for efficient matching

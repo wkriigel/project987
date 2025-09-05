@@ -28,7 +28,9 @@ class BOSESurroundSoundOption:
             r"\bpremium\s+audio\b",
             r"\bpremium\s+sound\b",
             r"\bpremium\s+audio\s+system\b",
-            r"\bupgraded\s+sound\s+system\b"
+            r"\bupgraded\s+sound\s+system\b",
+            r"\b680\b",
+            r"\b9vl\b"
         ]
         
         # Compile patterns for efficient matching

@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "source": "manual_research",
+  "models": [
+    {
+      "name": "Cayman",
+      "synonyms": ["Cayman"],
+      "generations": [
+        { "key": "Cayman-987.1", "code": "987.1", "years": { "min": 2005, "max": 2008 },
+          "trims": ["Base", "S"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Cayman-987.2", "code": "987.2", "years": { "min": 2009, "max": 2012 },
+          "trims": ["Base", "S", "R"], "trims_default": false, "options": [
+            { "id": "639/640", "display": "Sport Chrono Package Plus", "msrp": 960 },
+            { "id": "PASM", "display": "PASM", "msrp": 1990 },
+            { "id": "PSE", "display": "Sport Exhaust (PSE)", "msrp": 2500 },
+            { "id": "Sport Seats", "display": "Sport Seats / Adaptive Sport Seats", "msrp": 1525 },
+            { "id": "HTD", "display": "Heated Seats", "msrp": 500 },
+            { "id": "PCM", "display": "PCM w/ Navigation", "msrp": 3265 },
+            { "id": "BOSE", "display": "BOSE Surround Sound", "msrp": 1350 },
+            { "id": "BIX", "display": "Bi-Xenon Headlights with Dynamic Cornering", "msrp": 1360 },
+            { "id": "19W", "display": "18–19\" Upgraded Wheels", "msrp": 1500 }
+          ], "options_default": false },
+        { "key": "Cayman-981", "code": "981", "years": { "min": 2013, "max": 2016 },
+          "trims": ["Base", "S", "GTS", "GT4"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Cayman-982", "code": "982", "years": { "min": 2017, "max": 2025 },
+          "trims": ["Base", "T", "S", "GTS 4.0", "GT4", "GT4 RS"], "trims_default": false, "options": [], "options_default": true }
+      ]
+    },
+    {
+      "name": "Boxster",
+      "synonyms": ["Boxster"],
+      "generations": [
+        { "key": "Boxster-986", "code": "986", "years": { "min": 1997, "max": 2004 },
+          "trims": ["Base", "S"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Boxster-987.1", "code": "987.1", "years": { "min": 2005, "max": 2008 },
+          "trims": ["Base", "S"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Boxster-987.2", "code": "987.2", "years": { "min": 2009, "max": 2012 },
+          "trims": ["Base", "S", "Spyder"], "trims_default": false, "options": [
+            { "id": "639/640", "display": "Sport Chrono Package Plus", "msrp": 960 },
+            { "id": "PASM", "display": "PASM", "msrp": 1990 },
+            { "id": "PSE", "display": "Sport Exhaust (PSE)", "msrp": 2500 },
+            { "id": "Sport Seats", "display": "Sport Seats / Adaptive Sport Seats", "msrp": 1525 },
+            { "id": "HTD", "display": "Heated Seats", "msrp": 500 },
+            { "id": "PCM", "display": "PCM w/ Navigation", "msrp": 3265 },
+            { "id": "BOSE", "display": "BOSE Surround Sound", "msrp": 1350 },
+            { "id": "BIX", "display": "Bi-Xenon Headlights with Dynamic Cornering", "msrp": 1360 },
+            { "id": "19W", "display": "18–19\" Upgraded Wheels", "msrp": 1500 }
+          ], "options_default": false },
+        { "key": "Boxster-981", "code": "981", "years": { "min": 2013, "max": 2016 },
+          "trims": ["Base", "S", "GTS", "Spyder"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Boxster-982", "code": "982", "years": { "min": 2017, "max": 2025 },
+          "trims": ["Base", "T", "S", "GTS 4.0", "Spyder", "Spyder RS"], "trims_default": false, "options": [], "options_default": true }
+      ]
+    },
+    {
+      "name": "911",
+      "synonyms": ["911"],
+      "generations": [
+        { "key": "911-996", "code": "996", "years": { "min": 1999, "max": 2004 },
+          "trims": ["Carrera", "Carrera 4", "Carrera 4S", "Targa", "Turbo", "GT3", "GT2"],
+          "trims_default": false, "options": [], "options_default": true },
+        { "key": "911-997.1", "code": "997.1", "years": { "min": 2005, "max": 2008 },
+          "trims": ["Carrera", "Carrera S", "Carrera 4", "Carrera 4S", "Targa", "Turbo", "GT3", "GT2"],
+          "trims_default": false, "options": [], "options_default": true },
+        { "key": "911-997.2", "code": "997.2", "years": { "min": 2009, "max": 2012 },
+          "trims": ["Carrera", "Carrera S", "Carrera 4", "Carrera 4S", "Targa", "Turbo", "GT3", "GT2"],
+          "trims_default": false, "options": [
+            { "id": "639/640", "display": "Sport Chrono Package Plus", "msrp": 920 },
+            { "id": "PASM", "display": "PASM", "msrp": 1990 },
+            { "id": "PSE", "display": "Sport Exhaust (PSE)", "msrp": 2400 },
+            { "id": "Sport Seats", "display": "Sport Seats / Adaptive Sport Seats", "msrp": 1550 },
+            { "id": "HTD", "display": "Heated Seats", "msrp": 500 },
+            { "id": "PCM", "display": "PCM w/ Navigation", "msrp": 3070 },
+            { "id": "BOSE", "display": "BOSE Surround Sound", "msrp": 1390 },
+            { "id": "BIX", "display": "Bi-Xenon Headlights with Dynamic Cornering", "msrp": 1090 },
+            { "id": "19W", "display": "18–19\" Upgraded Wheels", "msrp": 2000 }
+          ], "options_default": false },
+        { "key": "911-991.1", "code": "991.1", "years": { "min": 2012, "max": 2016 },
+          "trims": ["Carrera", "Carrera S", "Carrera 4", "Carrera 4S", "Targa 4", "Targa 4S", "Turbo", "Turbo S", "GT3", "GT3 RS", "GTS"],
+          "trims_default": false, "options": [], "options_default": true },
+        { "key": "911-991.2", "code": "991.2", "years": { "min": 2017, "max": 2019 },
+          "trims": ["Carrera", "Carrera T", "Carrera S", "Carrera 4", "Carrera 4S", "Targa 4", "Targa 4S", "Turbo", "Turbo S", "GT3", "GT3 RS", "GT2 RS", "GTS"],
+          "trims_default": false, "options": [], "options_default": true },
+        { "key": "911-992", "code": "992", "years": { "min": 2020, "max": 2025 },
+          "trims": ["Carrera", "Carrera T", "Carrera S", "Carrera 4", "Carrera 4S", "Targa 4", "Targa 4S", "GTS", "Turbo", "Turbo S", "GT3", "GT3 RS", "Dakar", "S/T"],
+          "trims_default": false, "options": [], "options_default": true }
+      ]
+    },
+    {
+      "name": "Cayenne",
+      "synonyms": ["Cayenne"],
+      "generations": [
+        { "key": "Cayenne-955/957", "code": "955/957", "years": { "min": 2003, "max": 2010 },
+          "trims": ["Base", "S", "GTS", "Turbo", "Turbo S"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Cayenne-958.1", "code": "958.1", "years": { "min": 2011, "max": 2014 },
+          "trims": ["Base", "S", "GTS", "Turbo", "Turbo S", "S Hybrid"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Cayenne-958.2", "code": "958.2", "years": { "min": 2015, "max": 2018 },
+          "trims": ["Base", "S", "GTS", "Turbo", "Turbo S", "S E-Hybrid"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Cayenne-9Y0", "code": "9Y0", "years": { "min": 2019, "max": 2025 },
+          "trims": ["Base", "S", "GTS", "Turbo", "E-Hybrid", "Turbo S E-Hybrid", "Turbo GT"], "trims_default": false, "options": [], "options_default": true }
+      ]
+    },
+    {
+      "name": "Panamera",
+      "synonyms": ["Panamera"],
+      "generations": [
+        { "key": "Panamera-970.1", "code": "970.1", "years": { "min": 2010, "max": 2013 },
+          "trims": ["Base", "4", "4S", "GTS", "Turbo"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Panamera-970.2", "code": "970.2", "years": { "min": 2014, "max": 2016 },
+          "trims": ["Base", "4", "4S", "GTS", "Turbo", "Turbo S", "S E-Hybrid"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Panamera-971.1", "code": "971.1", "years": { "min": 2017, "max": 2020 },
+          "trims": ["Base", "4", "4S", "GTS", "Turbo", "Turbo S", "4 E-Hybrid", "Turbo S E-Hybrid"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Panamera-971.2", "code": "971.2", "years": { "min": 2021, "max": 2025 },
+          "trims": ["Base", "4", "4S", "GTS", "Turbo S", "4 E-Hybrid", "Turbo S E-Hybrid"], "trims_default": false, "options": [], "options_default": true }
+      ]
+    },
+    {
+      "name": "Macan",
+      "synonyms": ["Macan"],
+      "generations": [
+        { "key": "Macan-95B.1", "code": "95B.1", "years": { "min": 2015, "max": 2018 },
+          "trims": ["Base", "S", "GTS", "Turbo", "Turbo Performance Package"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Macan-95B.2", "code": "95B.2", "years": { "min": 2019, "max": 2023 },
+          "trims": ["Base", "S", "GTS", "Turbo"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Macan-95B.3", "code": "95B.3", "years": { "min": 2024, "max": 2025 },
+          "trims": ["Base", "T", "S", "GTS"], "trims_default": false, "options": [], "options_default": true },
+        { "key": "Macan-ev-2025-", "code": "Macan EV", "years": { "min": 2025 },
+          "trims": ["Macan 4", "Macan Turbo"], "trims_default": false, "options": [], "options_default": true }
+      ]
+    },
+    {
+      "name": "Taycan",
+      "synonyms": ["Taycan"],
+      "generations": [
+        { "key": "Taycan-9J1", "code": "9J1", "years": { "min": 2020, "max": 2025 },
+          "trims": ["Base", "4S", "GTS", "Turbo", "Turbo S", "4 Cross Turismo", "4S Cross Turismo", "Turbo Cross Turismo"],
+          "trims_default": false, "options": [], "options_default": true }
+      ]
+    }
+  ]
+}

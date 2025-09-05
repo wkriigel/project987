@@ -1,0 +1,8 @@
+category,source_url,year,model,price,deal_delta_usd,composite_score,rank
+overall_top_5_1,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,2005,Boxster,"$12,995",26505,3669.525,1
+overall_top_5_2,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,2005,Boxster,"$13,900",25600,3581.1622,2
+overall_top_5_3,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,2005,Boxster,"$16,000",23800,3401.9669000000004,3
+overall_top_5_4,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,2005,Boxster,"$15,943",23557,3374.2561000000005,4
+overall_top_5_5,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,2005,Boxster,"$17,995",23005,3323.538,5
+best_deal,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,2003,911,"$6,900",26800,2700.337,21
+best_value,https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214,2005,Boxster,"$12,995",26505,3669.525,1

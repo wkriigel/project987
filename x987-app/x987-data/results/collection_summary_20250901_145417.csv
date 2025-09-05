@@ -1,0 +1,4 @@
+source_url,urls_collected,collection_timestamp,processing_status
+https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214,1,2025-09-01T14:54:17.105414,success
+https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214,99,2025-09-01T14:54:17.105436,success
+https://www.autotempest.com/results?keywords=gts&localization=country&make=porsche&maxmiles=70000&maxprice=50000&maxyear=2018&minmiles=15000&minprice=20000&minyear=2015&model=macan&transmission=auto&zip=30214,52,2025-09-01T14:54:17.105448,success

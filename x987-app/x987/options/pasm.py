@@ -27,7 +27,8 @@ class PASMOption:
             r"\badaptive\s+damping\b",
             r"\bporsche\s+active\s+suspension\s+management\b",
             r"\badaptive\s+sport\s+suspension\b",
-            r"\bsport\s+suspension\b"
+            r"\bsport\s+suspension\b",
+            r"\b474\b"
         ]
         
         # Compile patterns for efficient matching

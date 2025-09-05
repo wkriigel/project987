@@ -295,14 +295,6 @@ def normalize_model_trim(year: Optional[int], model: str, trim: str) -> str:
     if not year or not model:
         return "Unknown"
     
-    # Validate year range
-    if year < 2009 or year > 2012:
-        return f"Invalid Year {year}"
-    
-    # Validate model
-    if model.lower() not in ["cayman", "boxster"]:
-        return f"Invalid Model {model}"
-    
     # Format trim (omit "Base" or blank)
     if not trim or trim.lower() in ["base", ""]:
         return f"{year} {model}"
@@ -333,6 +325,24 @@ def infer_trim_intelligent(title: str, body: str = "") -> str:
         return "Spyder"
     if re.search(r"\bBlack\s+Edition\b", title, re.I):
         return "Black Edition"
+    # 911 trims
+    if re.search(r"\b911\b", title, re.I):
+        if re.search(r"\bCarrera\s+4S\b", title, re.I):
+            return "Carrera 4S"
+        if re.search(r"\bCarrera\s+4\b", title, re.I):
+            return "Carrera 4"
+        if re.search(r"\bCarrera\s+S\b", title, re.I):
+            return "Carrera S"
+        if re.search(r"\bCarrera\b", title, re.I):
+            return "Carrera"
+        if re.search(r"\bTarga\b", title, re.I):
+            return "Targa"
+        if re.search(r"\bTurbo\b", title, re.I):
+            return "Turbo"
+        if re.search(r"\bGT3\b", title, re.I):
+            return "GT3"
+        if re.search(r"\bGT2\b", title, re.I):
+            return "GT2"
     
     # Explicit S in title - use word boundaries
     if re.search(r"\b(Cayman|Boxster)\s+S\b", title, re.I):

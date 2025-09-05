@@ -18,18 +18,6 @@ DEFAULT_CONFIG = {
             "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214"
         ]
     },
-    "fair_value": {
-        "base_value_usd": 30500,
-        "year_step_usd": 500,
-        "s_premium_usd": 7000,
-        "exterior_color_usd": 300,
-        "interior_color_usd": 300,
-        "special_trim_premiums": {
-            "Cayman R": 30000,
-            "Boxster Spyder": 30000,
-            "Black Edition": 1500
-        }
-    },
     "scraping": {
         "concurrency": 2,
         "polite_delay_ms": 1000,
