@@ -28,6 +28,15 @@ export function findConfigPath(): string | null {
   ])
 }
 
+export function findGenerationCatalogJson(): string | null {
+  // Look for a generated JSON catalog that FE can consume
+  return ascendCandidates([
+    path.join('x987-web', 'apps', 'api', 'data', 'generation_catalog.json'),
+    path.join('x987-data', 'metadata', 'generation_catalog.json'),
+    path.join('x987-data', 'metadata', 'generations.json')
+  ])
+}
+
 export function findLatestRankingCsv(dir: string): string | null {
   const all = fs.readdirSync(dir).filter(f => f.toLowerCase().endsWith('.csv')).sort()
   // Prefer ranking_main_*

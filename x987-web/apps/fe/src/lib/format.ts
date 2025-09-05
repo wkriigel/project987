@@ -39,9 +39,42 @@ export function normalizeModelTrim(s?: string): string {
   const raw = (s || '').trim()
   if (!raw) return ''
   let t = raw.replace(/\bbase\b/gi, '')
-  t = t.replace(/\bcayman\b/gi, 'Cayman').replace(/\bboxster\b/gi, 'Boxster')
+  // Canonical model casing
+  t = t.replace(/\bcayman\b/gi, 'Cayman').replace(/\bboxster\b/gi, 'Boxster').replace(/\b911\b/gi, '911')
+  // Common special editions
   t = t.replace(/\bblack\s+edition\b/gi, 'BE')
+  // Cayman/Boxster S normalization
   t = t.replace(/\b(Cayman|Boxster)\s+s\b/gi, '$1 S')
+  // 911: normalize Carrera variants and popular abbreviations
+  // Expand C4S/C4/C2 when 911 context exists or Carrera present
+  const lower = t.toLowerCase()
+  const in911Ctx = /\b911\b/.test(lower) || /\bcarrera\b/.test(lower)
+  if (in911Ctx) {
+    t = t
+      .replace(/\bcarrera\s+4\s*s\b/gi, 'Carrera 4S')
+      .replace(/\bcarrera\s+s\b/gi, 'Carrera S')
+      .replace(/\bcarrera\s+4\b/gi, 'Carrera 4')
+      .replace(/\bcarrera\b/gi, 'Carrera')
+      .replace(/\bc4s\b/gi, 'Carrera 4S')
+      .replace(/\bc4\b/gi, 'Carrera 4')
+      .replace(/\bc2\b/gi, 'Carrera')
+      .replace(/\btarga\b/gi, 'Targa')
+      .replace(/\bturbo\s*s\b/gi, 'Turbo S')
+      .replace(/\bturbo\b/gi, 'Turbo')
+      .replace(/\bgt3\s*rs\b/gi, 'GT3 RS')
+      .replace(/\bgt2\s*rs\b/gi, 'GT2 RS')
+      .replace(/\bgt3\b/gi, 'GT3')
+      .replace(/\bgt2\b/gi, 'GT2')
+  }
+  // Generic trim token normalizations across models
+  t = t
+    .replace(/\b4\s*s\b/gi, '4S')
+    .replace(/\b4\s*gts\b/gi, '4 GTS')
+    .replace(/\be[-\s]*hybrid\b/gi, 'E-Hybrid')
+    .replace(/\bgts\s*4\.0\b/gi, 'GTS 4.0')
+    .replace(/\bturbo\s*s\b/gi, 'Turbo S')
+    .replace(/\bgt4\b/gi, 'GT4')
+    .replace(/\bgts\b/gi, 'GTS')
   return t.replace(/\s+/g, ' ').trim()
 }
 
@@ -54,7 +87,8 @@ export function shortenOption(label: string): string {
   if (low.includes('pasm') || low.includes('adaptive suspension') || low.includes('active suspension')) return 'PASM'
   if (low.includes('sport exhaust') || /\bpse\b/.test(low)) return 'Exhaust'
   if (low.includes('limited slip') || /\blsd\b/.test(low)) return 'LSD'
-  if (/\bpdk\b/.test(low)) return 'PDK'
+  // Hide transmissions; PDK/Tiptronic are assumed, not options
+  if (/\bpdk\b/.test(low)) return ''
   if (low.includes('heated seat')) return 'Heated'
   if (low.includes('ventilated') || low.includes('cooled seat')) return 'Cooled'
   if (low.includes('sport seat') || low.includes('adaptive sport')) return 'Seats'
@@ -74,4 +108,3 @@ export function optionsCompact(opt: string | string[] | undefined): string {
   const arr = Array.isArray(opt) ? opt : String(opt).split(',').map(s => s.trim()).filter(Boolean)
   return arr.map(shortenOption).filter(Boolean).join(', ')
 }
-

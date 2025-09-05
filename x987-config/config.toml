@@ -1,10 +1,14 @@
 [search]
 urls = [
     #"https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=cayman&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=cayman&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?keywords=gts&localization=country&make=porsche&maxmiles=70000&maxprice=42000&minmiles=15000&minprice=39000&minyear=2018&model=macan&transmission=auto&zip=30214",
+    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&trim_kw=S&zip=30214",
+    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&trim_kw=S&zip=30214",
 ]
 
 [fair_value]
@@ -39,8 +43,6 @@ PASM = 1990           # PASM
 LSD = 890             # LSD (module ID)
 XLF = 2500            # Sport Exhaust (PSE)
 PSE = 2500            # Sport Exhaust (module ID)
-"250" = 3200         # PDK (code)
-PDK = 3200            # PDK (module ID)
 SSEAT = 1525          # Sport Seats / Adaptive Sport Seats (code)
 "Sport Seats" = 1525 # Sport Seats (module ID)
 HTD = 500             # Heated Seats (code)
@@ -55,6 +57,7 @@ BIX = 1360            # Bi-Xenon Headlights with Dynamic Cornering (code)
 "Bi-Xenon" = 1360    # Bi-Xenon Headlights (module ID)
 "19W" = 1500         # 18–19" Upgraded Wheels (code)
 Wheels = 1500         # 18–19" Upgraded Wheels (module ID)
+ACTIVE_RIDE = 7140    # Porsche Active Ride (Adaptive Suspension) - Taycan 9J1 (fallback MSRP)
 [options_v2.catalog]
 # Performance Options
 [[options_v2.catalog.performance]]
@@ -186,13 +189,809 @@ patterns = [
 ]
 standard_on_trims = ["Cayman R"]
 
-# Transmission (stored but not displayed)
-[[options_v2.catalog.performance]]
-id = "250"
-display = "PDK"
-value_usd = 0
-patterns = [
-    "pdk", "7-speed pdk", "porsche doppelkupplung", "7 speed pdk",
-    "7-speed automatic", "7 speed automatic"
+# =============================
+# Vehicle Catalog (Models/Trims)
+# =============================
+# This catalog powers model/trim detection in Python (and can be mirrored in FE).
+# It's designed to be easily extended as we add more models and generations.
+
+[vehicles]
+
+# Each model entry defines canonical name, synonyms, and trims with their own synonyms.
+# Detection prefers more specific trims first (e.g., Carrera 4S over Carrera 4 over Carrera).
+[vehicles.models.911]
+name = "911"
+synonyms = ["911"]
+
+[[vehicles.models.911.trims]]
+name = "Carrera"
+synonyms = ["Carrera", "C2", "Carrera 2"]
+
+[[vehicles.models.911.trims]]
+name = "Carrera 4"
+synonyms = ["Carrera 4", "C4"]
+
+[[vehicles.models.911.trims]]
+name = "Carrera 4S"
+synonyms = ["Carrera 4S", "C4S"]
+
+[[vehicles.models.911.trims]]
+name = "Carrera S"
+synonyms = ["Carrera S"]
+
+[[vehicles.models.911.trims]]
+name = "Targa"
+synonyms = ["Targa"]
+
+[[vehicles.models.911.trims]]
+name = "Turbo"
+synonyms = ["Turbo", "Turbo S"]
+
+[[vehicles.models.911.trims]]
+name = "GT3"
+synonyms = ["GT3", "GT3 RS"]
+
+[[vehicles.models.911.trims]]
+name = "GT2"
+synonyms = ["GT2", "GT2 RS"]
+
+# Example entries for Boxster/Cayman (kept minimal; extend as needed)
+[vehicles.models.Cayman]
+name = "Cayman"
+synonyms = ["Cayman"]
+
+[[vehicles.models.Cayman.trims]]
+name = "Base"
+synonyms = ["Base"]
+
+[[vehicles.models.Cayman.trims]]
+name = "S"
+synonyms = ["S"]
+
+[[vehicles.models.Cayman.trims]]
+name = "R"
+synonyms = ["R"]
+
+[vehicles.models.Boxster]
+name = "Boxster"
+synonyms = ["Boxster"]
+
+[[vehicles.models.Boxster.trims]]
+name = "Base"
+synonyms = ["Base"]
+
+[[vehicles.models.Boxster.trims]]
+name = "S"
+synonyms = ["S"]
+
+[[vehicles.models.Boxster.trims]]
+name = "Spyder"
+synonyms = ["Spyder"]
+
+# ============
+# Generations
+# ============
+
+# 911 Generations
+[[vehicles.models.911.generations]]
+code = "996"
+years = { min = 1999, max = 2004 }
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera"
+  synonyms = ["Carrera", "Carrera 2", "C2"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4"
+  synonyms = ["Carrera 4", "C4"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4S"
+  synonyms = ["Carrera 4S", "C4S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Targa"
+  synonyms = ["Targa"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3"
+  synonyms = ["GT3"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT2"
+  synonyms = ["GT2"]
+
+[[vehicles.models.911.generations]]
+code = "997.1"
+years = { min = 2005, max = 2008 }
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera"
+  synonyms = ["Carrera", "C2"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera S"
+  synonyms = ["Carrera S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4"
+  synonyms = ["Carrera 4", "C4"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4S"
+  synonyms = ["Carrera 4S", "C4S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Targa"
+  synonyms = ["Targa"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3"
+  synonyms = ["GT3"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT2"
+  synonyms = ["GT2"]
+
+[[vehicles.models.911.generations]]
+code = "997.2"
+years = { min = 2009, max = 2012 }
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera"
+  synonyms = ["Carrera", "C2"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera S"
+  synonyms = ["Carrera S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4"
+  synonyms = ["Carrera 4", "C4"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4S"
+  synonyms = ["Carrera 4S", "C4S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Targa"
+  synonyms = ["Targa"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3"
+  synonyms = ["GT3"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT2"
+  synonyms = ["GT2"]
+
+[[vehicles.models.911.generations]]
+code = "991.1"
+years = { min = 2012, max = 2016 }
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera"
+  synonyms = ["Carrera"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera S"
+  synonyms = ["Carrera S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4"
+  synonyms = ["Carrera 4"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4S"
+  synonyms = ["Carrera 4S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Targa"
+  synonyms = ["Targa"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo S"
+  synonyms = ["Turbo S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3"
+  synonyms = ["GT3"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3 RS"
+  synonyms = ["GT3 RS"]
+
+[[vehicles.models.911.generations]]
+code = "991.2"
+years = { min = 2017, max = 2019 }
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera"
+  synonyms = ["Carrera"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera S"
+  synonyms = ["Carrera S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera GTS"
+  synonyms = ["Carrera GTS", "GTS"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4"
+  synonyms = ["Carrera 4"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4S"
+  synonyms = ["Carrera 4S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4 GTS"
+  synonyms = ["Carrera 4 GTS", "4 GTS"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Targa"
+  synonyms = ["Targa"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo S"
+  synonyms = ["Turbo S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3"
+  synonyms = ["GT3"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3 RS"
+  synonyms = ["GT3 RS"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT2 RS"
+  synonyms = ["GT2 RS"]
+
+[[vehicles.models.911.generations]]
+code = "992"
+years = { min = 2020, max = 2025 }
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera"
+  synonyms = ["Carrera"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera S"
+  synonyms = ["Carrera S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera GTS"
+  synonyms = ["Carrera GTS", "GTS"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4"
+  synonyms = ["Carrera 4"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4S"
+  synonyms = ["Carrera 4S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Carrera 4 GTS"
+  synonyms = ["Carrera 4 GTS", "4 GTS"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Targa"
+  synonyms = ["Targa"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Turbo S"
+  synonyms = ["Turbo S"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3"
+  synonyms = ["GT3"]
+  [[vehicles.models.911.generations.trims]]
+  name = "GT3 RS"
+  synonyms = ["GT3 RS"]
+  [[vehicles.models.911.generations.trims]]
+  name = "Dakar"
+  synonyms = ["Dakar"]
+  [[vehicles.models.911.generations.trims]]
+  name = "ST"
+  synonyms = ["ST"]
+
+# Cayman Generations
+[[vehicles.models.Cayman.generations]]
+code = "987.1"
+years = { min = 2005, max = 2008 }
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+
+[[vehicles.models.Cayman.generations]]
+code = "987.2"
+years = { min = 2009, max = 2012 }
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "R"
+  synonyms = ["R"]
+
+[[vehicles.models.Cayman.generations]]
+code = "981"
+years = { min = 2013, max = 2016 }
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "Spyder"
+  synonyms = ["Spyder"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "GT4"
+  synonyms = ["GT4"]
+
+[[vehicles.models.Cayman.generations]]
+code = "982/718"
+years = { min = 2017, max = 2025 }
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "T"
+  synonyms = ["T"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "GTS 4.0"
+  synonyms = ["GTS 4.0"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "GT4"
+  synonyms = ["GT4"]
+  [[vehicles.models.Cayman.generations.trims]]
+  name = "Spyder"
+  synonyms = ["Spyder"]
+
+# Boxster Generations
+[[vehicles.models.Boxster.generations]]
+code = "986"
+years = { min = 1997, max = 2004 }
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+
+[[vehicles.models.Boxster.generations]]
+code = "987.1"
+years = { min = 2005, max = 2008 }
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+
+[[vehicles.models.Boxster.generations]]
+code = "987.2"
+years = { min = 2009, max = 2012 }
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Spyder"
+  synonyms = ["Spyder"]
+
+[[vehicles.models.Boxster.generations]]
+code = "981"
+years = { min = 2013, max = 2016 }
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Spyder"
+  synonyms = ["Spyder"]
+
+[[vehicles.models.Boxster.generations]]
+code = "982/718"
+years = { min = 2017, max = 2025 }
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "T"
+  synonyms = ["T"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "GTS 4.0"
+  synonyms = ["GTS 4.0"]
+  [[vehicles.models.Boxster.generations.trims]]
+  name = "Spyder"
+  synonyms = ["Spyder"]
+
+# Cayenne Models
+[vehicles.models.Cayenne]
+name = "Cayenne"
+synonyms = ["Cayenne"]
+
+[[vehicles.models.Cayenne.generations]]
+code = "955/957"
+years = { min = 2003, max = 2010 }
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+
+[[vehicles.models.Cayenne.generations]]
+code = "958.1"
+years = { min = 2011, max = 2014 }
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo S"
+  synonyms = ["Turbo S"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Hybrid"
+  synonyms = ["Hybrid"]
+
+[[vehicles.models.Cayenne.generations]]
+code = "958.2"
+years = { min = 2015, max = 2018 }
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo S"
+  synonyms = ["Turbo S"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Hybrid"
+  synonyms = ["Hybrid"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "E-Hybrid"
+  synonyms = ["E-Hybrid", "E Hybrid"]
+
+[[vehicles.models.Cayenne.generations]]
+code = "9Y0"
+years = { min = 2019, max = 2025 }
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Base"
+  synonyms = ["Base", "Coupe Base", "Base Coupe"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "S"
+  synonyms = ["S", "S Coupe", "Coupe S"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS", "GTS Coupe", "Coupe GTS"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo", "Turbo Coupe", "Coupe Turbo"]
+  [[vehicles.models.Cayenne.generations.trims]]
+  name = "Turbo S E-Hybrid"
+  synonyms = ["Turbo S E-Hybrid", "Turbo S E Hybrid", "Turbo S E-Hybrid Coupe", "Turbo S E Hybrid Coupe"]
+
+# Panamera Models
+[vehicles.models.Panamera]
+name = "Panamera"
+synonyms = ["Panamera"]
+
+[[vehicles.models.Panamera.generations]]
+code = "970.1"
+years = { min = 2010, max = 2013 }
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "4S"
+  synonyms = ["4S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Hybrid"
+  synonyms = ["Hybrid"]
+
+[[vehicles.models.Panamera.generations]]
+code = "970.2"
+years = { min = 2014, max = 2016 }
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "4S"
+  synonyms = ["4S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Hybrid"
+  synonyms = ["Hybrid"]
+
+[[vehicles.models.Panamera.generations]]
+code = "971.1"
+years = { min = 2017, max = 2020 }
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "4S"
+  synonyms = ["4S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "E-Hybrid"
+  synonyms = ["E-Hybrid", "E Hybrid"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Turbo S E-Hybrid"
+  synonyms = ["Turbo S E-Hybrid", "Turbo S E Hybrid"]
+
+[[vehicles.models.Panamera.generations]]
+code = "971.2"
+years = { min = 2021, max = 2025 }
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "4S"
+  synonyms = ["4S"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "E-Hybrid"
+  synonyms = ["E-Hybrid", "E Hybrid"]
+  [[vehicles.models.Panamera.generations.trims]]
+  name = "Turbo S E-Hybrid"
+  synonyms = ["Turbo S E-Hybrid", "Turbo S E Hybrid"]
+
+# Macan Models
+[vehicles.models.Macan]
+name = "Macan"
+synonyms = ["Macan"]
+
+[[vehicles.models.Macan.generations]]
+code = "95B.1"
+years = { min = 2015, max = 2018 }
+  [[vehicles.models.Macan.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+
+[[vehicles.models.Macan.generations]]
+code = "95B.2"
+years = { min = 2019, max = 2023 }
+  [[vehicles.models.Macan.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+
+[[vehicles.models.Macan.generations]]
+code = "95B.3"
+years = { min = 2024, max = 2025 }
+  [[vehicles.models.Macan.generations.trims]]
+  name = "Base"
+  synonyms = ["Base"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "S"
+  synonyms = ["S"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "T"
+  synonyms = ["T"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS"]
+
+[[vehicles.models.Macan.generations]]
+code = "Macan Electric (PPE)"
+years = { min = 2025 }
+  [[vehicles.models.Macan.generations.trims]]
+  name = "4"
+  synonyms = ["Macan 4", "4"]
+  [[vehicles.models.Macan.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Macan Turbo", "Turbo"]
+
+# Taycan Models
+[vehicles.models.Taycan]
+name = "Taycan"
+synonyms = ["Taycan"]
+
+[[vehicles.models.Taycan.generations]]
+code = "9J1"
+years = { min = 2020, max = 2025 }
+  [[vehicles.models.Taycan.generations.trims]]
+  name = "4S"
+  synonyms = ["4S", "4S Cross Turismo", "Cross Turismo 4S", "4S Sport Turismo"]
+  [[vehicles.models.Taycan.generations.trims]]
+  name = "Turbo"
+  synonyms = ["Turbo", "Turbo Cross Turismo", "Turbo Sport Turismo"]
+  [[vehicles.models.Taycan.generations.trims]]
+  name = "Turbo S"
+  synonyms = ["Turbo S", "Turbo S Cross Turismo", "Turbo S Sport Turismo"]
+  [[vehicles.models.Taycan.generations.trims]]
+  name = "GTS"
+  synonyms = ["GTS", "GTS Sport Turismo"]
+
+# =============================
+# Options Per Generation (MSRP overrides / defaults)
+# =============================
+[options_per_generation.defaults]
+# Default "top options" used across models/generations
+top_options = [
+    "639/640",  # Sport Chrono
+    "PASM",     # PASM
+    "PSE",      # Sport Exhaust
+    "LSD",      # Limited Slip Differential
+    "Sport Seats", # Sport/Adaptive Sport Seats
+    "HTD",      # Heated Seats
+    "PCM",      # PCM w/ Navigation
+    "BOSE",     # BOSE
+    "BIX",      # Bi-Xenon
+    "19W",      # 18–19" Wheels
+    "PARK"      # Park Assist
 ]
-standard_on_trims = []
+
+[options_per_generation.911]
+  [options_per_generation.911."996".msrp]
+  PASM = 1990                # 474
+  "639/640" = 920            # Sport Chrono (640)
+  PSE = 2400                 # XLF / 09991
+  X51 = 15000                # X51 Power Kit
+  "Sport Seats" = 1550       # P01 / 982
+  HTD = 500                  # 342
+  BOSE = 1390                # 680
+  PCM = 3070                 # 670
+  LSD = 950                  # 220
+  SHORT_SHIFTER = 765        # X97/X98
+  BIX = 1090                 # 601
+  DIM_RAIN = 690             # 635
+  SPORT_WHEEL = 330          # 435/XPD
+  "19W" = 2000               # midpoint of 1390–2440
+  Wheels = 2000
+
+  [options_per_generation.911."997.1".msrp]
+  PASM = 1990
+  "639/640" = 920
+  PSE = 2400
+  X51 = 15000
+  "Sport Seats" = 1550
+  HTD = 500
+  BOSE = 1390
+  PCM = 3070
+  LSD = 950
+  SHORT_SHIFTER = 765
+  BIX = 1090
+  DIM_RAIN = 690
+  SPORT_WHEEL = 330
+  "19W" = 2000
+  Wheels = 2000
+
+  [options_per_generation.911."997.2".msrp]
+  PASM = 1990
+  "639/640" = 920
+  PSE = 2400
+  X51 = 15000
+  "Sport Seats" = 1550
+  HTD = 500
+  BOSE = 1390
+  PCM = 3070
+  LSD = 950
+  SHORT_SHIFTER = 765
+  BIX = 1090
+  DIM_RAIN = 690
+  SPORT_WHEEL = 330
+  "19W" = 2000
+  Wheels = 2000
+
+[options_per_generation.Macan]
+  [options_per_generation.Macan."95B.1".msrp]
+  PASM = 1390                # 475
+  "639/640" = 1360           # Sport Chrono (8LH)
+  PSE = 1590                 # 0P9
+  "Sport Seats" = 2560       # midpoint 1710–3440 (14/18-way)
+  BOSE = 990                 # 9VL
+  Bi-Xenon = 770             # PDLS (LEDs) mapping for detection
+  PCM = 1730                 # I8T Navigation
+  HEATED_REAR = 385          # 4A3
+
+  [options_per_generation.Macan."95B.2".msrp]
+  PASM = 1390
+  "639/640" = 1360
+  PSE = 1590
+  "Sport Seats" = 2560
+  BOSE = 990
+  Bi-Xenon = 770
+  PCM = 1730
+  HEATED_REAR = 385
+
+# 987.2 Cayman/Boxster: per-generation options MSRP (using base catalog values)
+[options_per_generation.Cayman]
+  [options_per_generation.Cayman."987.2".msrp]
+  "639/640" = 960
+  PASM = 1990
+  PSE = 2500
+  "Sport Seats" = 1525
+  HTD = 500
+  PCM = 3265
+  BOSE = 1350
+  BIX = 1360
+  "19W" = 1500
+  LSD = 890
+
+[options_per_generation.Boxster]
+  [options_per_generation.Boxster."987.2".msrp]
+  "639/640" = 960
+  PASM = 1990
+  PSE = 2500
+  "Sport Seats" = 1525
+  HTD = 500
+  PCM = 3265
+  BOSE = 1350
+  BIX = 1360
+  "19W" = 1500
