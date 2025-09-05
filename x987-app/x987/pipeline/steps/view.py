@@ -274,50 +274,40 @@ class ViewStep(BasePipelineStep):
             v = _to_int(l.get('asking_price_usd'))
             if v is not None:
                 valid_prices.append(v)
-        valid_deals = []
+        # MSRP stats (Options MSRP Total)
+        msrp_values = []
         for l in listings:
-            v = _to_int(l.get('deal_delta_usd'))
-            if v is not None:
-                valid_deals.append(v)
-
+            mv = _to_int(l.get('total_options_msrp'))
+            if mv is not None:
+                msrp_values.append(mv)
         avg_price = sum(valid_prices) / len(valid_prices) if valid_prices else 0
-        avg_deal_delta = sum(valid_deals) / len(valid_deals) if valid_deals else 0
+        avg_msrp = sum(msrp_values) / len(msrp_values) if msrp_values else 0
 
-        # Find best and worst deals
-        best_deal = max(listings, key=lambda x: x.get('deal_delta_usd', 0) or 0) if listings else None
-        worst_deal = min(listings, key=lambda x: x.get('deal_delta_usd', 0) or 0) if listings else None
-
-        # Format deal information safely - fixed formatting issues
-        if best_deal:
-            bd = _to_int(best_deal.get('deal_delta_usd'))
-            bp = _to_int(best_deal.get('asking_price_usd'))
-            best_deal_text = f"${bd:,}" if bd is not None else "No deal data"
-            best_deal_price = f"${bp:,}" if bp is not None else "No price"
-            # Compose model/trim from separate fields for display
-            best_model = (best_deal.get('model') or '').strip()
-            best_trim = (best_deal.get('trim') or '').strip()
+        # Highest/lowest MSRP rows
+        def _mt(listing: Dict[str, Any]) -> str:
+            best_model = (listing.get('model') or '').strip()
+            best_trim = (listing.get('trim') or '').strip()
             combined = f"{best_model} {best_trim}".strip()
-            _norm_best_mt = self._normalize_model_trim_text(combined)
-            best_deal_model = f"{best_deal.get('year', 'N/A')} {_norm_best_mt or 'N/A'}"
-        else:
-            best_deal_text = "No deals"
-            best_deal_price = "No price"
-            best_deal_model = "N/A"
+            return self._normalize_model_trim_text(combined)
 
-        if worst_deal:
-            wd = _to_int(worst_deal.get('deal_delta_usd'))
-            wp = _to_int(worst_deal.get('asking_price_usd'))
-            worst_deal_text = f"${wd:,}" if wd is not None else "No deal data"
-            worst_deal_price = f"${wp:,}" if wp is not None else "No price"
-            worst_model = (worst_deal.get('model') or '').strip()
-            worst_trim = (worst_deal.get('trim') or '').strip()
-            combined_worst = f"{worst_model} {worst_trim}".strip()
-            _norm_worst_mt = self._normalize_model_trim_text(combined_worst)
-            worst_deal_model = f"{worst_deal.get('year', 'N/A')} {_norm_worst_mt or 'N/A'}"
+        best_msrp = max(listings, key=lambda x: _to_int(x.get('total_options_msrp')) or 0) if listings else None
+        worst_msrp = min(listings, key=lambda x: _to_int(x.get('total_options_msrp')) or 0) if listings else None
+
+        if best_msrp:
+            bm = _to_int(best_msrp.get('total_options_msrp'))
+            best_msrp_text = f"${bm:,}" if bm is not None else "—"
+            best_msrp_model = f"{best_msrp.get('year', 'N/A')} {_mt(best_msrp) or 'N/A'}"
         else:
-            worst_deal_text = "No deals"
-            worst_deal_price = "No price"
-            worst_deal_model = "N/A"
+            best_msrp_text = "—"
+            best_msrp_model = "N/A"
+
+        if worst_msrp:
+            wm = _to_int(worst_msrp.get('total_options_msrp'))
+            worst_msrp_text = f"${wm:,}" if wm is not None else "—"
+            worst_msrp_model = f"{worst_msrp.get('year', 'N/A')} {_mt(worst_msrp) or 'N/A'}"
+        else:
+            worst_msrp_text = "—"
+            worst_msrp_model = "N/A"
 
         summary_text = f"""
         [bold]Total Listings:[/bold] {total_listings}
@@ -325,10 +315,10 @@ class ViewStep(BasePipelineStep):
         [bold]Transmission:[/bold] {auto_count} Automatic | {manual_count} Manual
 
         [bold]Average Price:[/bold] ${avg_price:,.0f}
-        [bold]Average Deal Delta:[/bold] ${avg_deal_delta:,.0f}
+        [bold]Average Options MSRP:[/bold] ${avg_msrp:,.0f}
 
-        [bold]Best Deal:[/bold] {best_deal_model} - {best_deal_text} ({best_deal_price})
-        [bold]Worst Deal:[/bold] {worst_deal_model} - {worst_deal_text} ({worst_deal_price})
+        [bold]Highest MSRP:[/bold] {best_msrp_model} - {best_msrp_text}
+        [bold]Lowest MSRP:[/bold] {worst_msrp_model} - {worst_msrp_text}
         """
 
         return Panel(summary_text, title="Summary Statistics", style="blue")
