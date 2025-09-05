@@ -16,7 +16,7 @@ Each field now has its own dedicated file:
 - **`model_trim.py`** - Extracts model and trim as combined field (e.g., "Cayman S" from "2010 Porsche Cayman S")
 - **`colors.py`** - Extracts both exterior and interior colors (e.g., "Arctic Silver" and "Black")
 - **`source.py`** - Extracts source/website from URLs or text (e.g., "Cars.com" from URL)
-- **`deal.py`** - Calculates deal delta (fair value minus asking price)
+  (Deal calculation removed in MSRP-only mode)
 
 ### 2. Base Architecture
 
@@ -46,7 +46,7 @@ Each field now has its own dedicated file:
   - `extract_model_trim_from_text(text)`
   - `extract_colors_from_text(text)`
   - `extract_source_from_text(text, url)`
-  - `extract_deal_delta(fair_value, asking_price)`
+  - (Deal delta extraction removed in MSRP-only mode)
 
 ## Test Results
 

@@ -43,6 +43,23 @@ class FairValueStep(BasePipelineStep):
         if not verbose:
             builtins.print = lambda *a, **k: None
         try:
+            # MSRP-only mode: no-op stub for compatibility
+            mode = str(config.get('pricing_mode', 'msrp_only')).lower()
+            if mode == 'msrp_only':
+                print("💤 Fair value step: MSRP-only mode active, skipping.")
+                return {
+                    "total_listings": 0,
+                    "listings_with_fair_value": 0,
+                    "listings_with_deal_delta": 0,
+                    "fair_value_data": [],
+                    "fair_value_stats": {
+                        "avg_fair_value": 0,
+                        "avg_deal_delta": 0,
+                        "fair_value_coverage": 0,
+                        "deal_delta_coverage": 0
+                    },
+                    "fair_value_timestamp": datetime.now().isoformat()
+                }
             print("💰 Starting fair value calculation process...")
             print(f"📁 Working directory: {Path.cwd()}")
             print(f"⏰ Fair value calculation started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

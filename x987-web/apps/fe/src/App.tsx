@@ -327,6 +327,7 @@ export function App() {
       key: 'msrp',
       align: 'right',
       sorter: (a,b) => (toInt(a.total_options_msrp)||0) - (toInt(b.total_options_msrp)||0),
+      defaultSortOrder: 'descend',
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
         const curr = (() => {
           try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} }

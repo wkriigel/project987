@@ -14,8 +14,8 @@ Each pipeline step now has its own dedicated file:
 - **`scraping.py`** - Scrapes vehicle data from collected URLs  
 - **`transformation.py`** - Transforms raw scraped data into normalized format
 - **`deduplication.py`** - Removes duplicate vehicle listings
-- **`fair_value.py`** - Calculates fair values and deal deltas
-- **`ranking.py`** - Ranks vehicle listings by deal delta and other criteria
+- **`fair_value.py`** - (No-op in MSRP-only mode) legacy fair value step
+- **`ranking.py`** - Ranks vehicle listings (MSRP-only: by Options MSRP total)
 
 ### 2. **Base Architecture**
 
@@ -88,7 +88,7 @@ Pipeline Steps Directory
 The system automatically determines the correct execution order:
 
 ```
-collection → scraping → transformation → deduplication → fair_value → ranking
+collection → scraping → transformation → deduplication → ranking (MSRP-only)
 ```
 
 Each step depends on the successful completion of previous steps, ensuring data flows correctly through the pipeline.

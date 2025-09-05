@@ -124,10 +124,15 @@ class ConfigManager:
     def get_fair_value_config(self) -> Dict[str, Any]:
         """Get fair value configuration"""
         return self.get('fair_value', {})
-    
+
     def get_options_config(self) -> Dict[str, Any]:
         """Get options configuration"""
         return self.get('options_v2', {})
+
+    def get_pricing_mode(self) -> str:
+        """Return pricing mode ('msrp_only' | 'current'). Defaults to 'msrp_only'."""
+        mode = self.get('pricing_mode', 'msrp_only')
+        return str(mode or 'msrp_only').lower()
     
     def reload(self):
         """Reload configuration from file"""
@@ -138,6 +143,7 @@ class ConfigManager:
         """Get a summary of the current configuration"""
         return {
             'config_file': str(self.config_file),
+            'pricing_mode': self.get_pricing_mode(),
             'search_urls_count': len(self.get_search_urls()),
             'scraping_concurrency': self.get('scraping.concurrency'),
             'scraping_polite_delay_ms': self.get('scraping.polite_delay_ms'),
