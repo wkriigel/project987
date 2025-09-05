@@ -11,6 +11,7 @@ RISK: Low - defaults can be overridden by user config
 
 # Default configuration values
 DEFAULT_CONFIG = {
+    "pricing_mode": "msrp_only",  # pricing modes: 'msrp_only' | 'current'
     "search": {
         "urls": [
             #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",

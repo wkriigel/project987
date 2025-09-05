@@ -28,7 +28,14 @@ class RankingStep(BasePipelineStep):
         return "Ranks vehicle listings by deal delta and other criteria"
     
     def get_dependencies(self) -> List[str]:
-        return ["fair_value"]  # Depends on fair value step
+        # Dynamic dependency: in MSRP-only mode, depend on deduplication; otherwise fair_value
+        try:
+            from ...config import get_config
+            cfg = get_config()
+            mode = cfg.get_pricing_mode() if hasattr(cfg, 'get_pricing_mode') else 'msrp_only'
+            return ["deduplication"] if mode == 'msrp_only' else ["fair_value"]
+        except Exception:
+            return ["fair_value"]
     
     def get_required_config(self) -> List[str]:
         return []  # No specific config required
@@ -45,7 +52,62 @@ class RankingStep(BasePipelineStep):
             print(f"📁 Working directory: {Path.cwd()}")
             print(f"⏰ Ranking started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-            # Get fair value results
+            # Determine mode
+            from ...config import get_config
+            cfg = get_config()
+            mode = cfg.get_pricing_mode() if hasattr(cfg, 'get_pricing_mode') else 'msrp_only'
+
+            if mode == 'msrp_only':
+                # Use deduplicated data and sort by total_options_msrp (desc)
+                if "deduplication" not in previous_results:
+                    print("❌ Deduplication step must complete successfully before ranking in MSRP-only mode")
+                    raise ValueError("Deduplication step must complete successfully before ranking")
+                dedupe_result = previous_results["deduplication"]
+                if not dedupe_result.is_success:
+                    print("❌ Deduplication step failed; cannot rank")
+                    raise ValueError("Deduplication step must succeed before ranking")
+                data = list(dedupe_result.data.get("deduped_data", []))
+                if not data:
+                    print("⚠️  No data to rank")
+                    return {
+                        "total_listings": 0,
+                        "ranked_data": [],
+                        "files_created": [],
+                        "ranking_timestamp": datetime.now().isoformat()
+                    }
+                # Numeric helper
+                def to_int(v):
+                    try:
+                        s = str(v).replace(',', '').replace('$', '').strip()
+                        return int(s)
+                    except Exception:
+                        return 0
+                # Sort by MSRP descending
+                data.sort(key=lambda x: to_int(x.get('total_options_msrp', 0)), reverse=True)
+                # Add rank index
+                normalized: List[Dict[str, Any]] = []
+                for i, item in enumerate(data):
+                    row = dict(item)
+                    row['rank'] = i + 1
+                    # Normalize price column name expected by FE/API
+                    if 'asking_price_usd' not in row:
+                        row['asking_price_usd'] = row.get('price', '')
+                    normalized.append(row)
+                # Save a single main ranking CSV
+                out_dir = Path(cfg.get('pipeline.output_directory', 'x987-data/results'))
+                out_dir.mkdir(parents=True, exist_ok=True)
+                ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+                out_file = out_dir / f"ranking_main_{ts}.csv"
+                self._save_csv(normalized, out_file)
+                print(f"📄 Saved MSRP-only ranking: {out_file}")
+                return {
+                    "total_listings": len(normalized),
+                    "ranked_data": normalized,
+                    "files_created": [str(out_file)],
+                    "ranking_timestamp": datetime.now().isoformat()
+                }
+
+            # Get fair value results (non-MSRP modes)
             if "fair_value" in previous_results:
                 fair_value_result = previous_results["fair_value"]
                 if not fair_value_result.is_success:

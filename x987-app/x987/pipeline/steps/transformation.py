@@ -114,7 +114,20 @@ class TransformationStep(BasePipelineStep):
             
             for i, listing in enumerate(scraping_data):
                 print(f"     📝 Processing listing {i+1}/{len(scraping_data)}...")
-                
+
+                # Build robust text source for extraction
+                _raw_text = listing.get('raw_text', '') or ''
+                if not _raw_text or len(str(_raw_text).strip()) < 10:
+                    try:
+                        _ex = listing.get('extracted_data', {}) or {}
+                        _dom = _ex.get('raw_dom_text') or ''
+                        _sections = _ex.get('raw_sections', {}) or {}
+                        _joined = ' \n '.join([str(v) for v in _sections.values() if v])
+                        _title = listing.get('title', '') or ''
+                        _raw_text = ' \n '.join([s for s in [_title, _dom, _joined] if s])
+                    except Exception:
+                        pass
+
                 # Extract all available properties
                 extracted_data = {
                     'source_url': listing.get('source_url', ''),
@@ -124,7 +137,7 @@ class TransformationStep(BasePipelineStep):
                 }
                 
                 # Extract year
-                year_value = extractor.extract_year(listing.get('raw_text', ''))
+                year_value = extractor.extract_year(_raw_text)
                 if year_value is not None:
                     extracted_data['year'] = str(year_value)
                     extracted_data['year_confidence'] = 1.0
@@ -133,7 +146,7 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['year_confidence'] = 0.0
                 
                 # Extract price
-                price_value = extractor.extract_price(listing.get('raw_text', ''))
+                price_value = extractor.extract_price(_raw_text)
                 if price_value is not None:
                     extracted_data['price'] = f"${price_value:,}"
                     extracted_data['price_confidence'] = 1.0
@@ -142,7 +155,7 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['price_confidence'] = 0.0
                 
                 # Extract mileage
-                mileage_value = extractor.extract_mileage(listing.get('raw_text', ''))
+                mileage_value = extractor.extract_mileage(_raw_text)
                 if mileage_value is not None:
                     extracted_data['mileage'] = f"{mileage_value:,}"
                     extracted_data['mileage_confidence'] = 1.0
@@ -151,7 +164,7 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['mileage_confidence'] = 0.0
                 
                 # Extract model/trim as separate fields
-                model_value, trim_value = extractor.extract_model_trim(listing.get('raw_text', ''))
+                model_value, trim_value = extractor.extract_model_trim(_raw_text)
                 if model_value and model_value != "Unknown":
                     extracted_data['model'] = model_value
                     extracted_data['trim'] = trim_value or "Base"
@@ -164,7 +177,7 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['trim_confidence'] = 0.0
                 
                 # Extract colors as separate fields (stop merging); adopt schema names
-                exterior_color, interior_color = extractor.extract_colors(listing.get('raw_text', ''))
+                exterior_color, interior_color = extractor.extract_colors(_raw_text)
                 if exterior_color:
                     extracted_data['exterior'] = exterior_color
                     extracted_data['exterior_confidence'] = 1.0
@@ -180,7 +193,7 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['interior_confidence'] = 0.0
                 
                 # Extract source
-                source_value = extractor.extract_source(listing.get('raw_text', ''), listing.get('source_url', ''))
+                source_value = extractor.extract_source(_raw_text, listing.get('source_url', ''))
                 if source_value and source_value != "unknown":
                     extracted_data['source'] = source_value
                     extracted_data['source_confidence'] = 1.0
@@ -253,7 +266,18 @@ class TransformationStep(BasePipelineStep):
                     'total_options_msrp': 0
                 }
                 
-                raw_text = listing.get('raw_text', '')
+                # Build robust text source for options detection
+                raw_text = listing.get('raw_text', '') or ''
+                if not raw_text or len(str(raw_text).strip()) < 10:
+                    try:
+                        extracted = listing.get('extracted_data', {}) or {}
+                        dom = extracted.get('raw_dom_text') or ''
+                        sections = extracted.get('raw_sections', {}) or {}
+                        joined = ' \n '.join([str(v) for v in sections.values() if v])
+                        title = listing.get('title', '') or ''
+                        raw_text = ' \n '.join([s for s in [title, dom, joined] if s])
+                    except Exception:
+                        pass
                 # Context from extracted properties
                 props = extracted_properties[i] if i < len(extracted_properties) else {}
                 trim = props.get('trim') or None
@@ -265,6 +289,7 @@ class TransformationStep(BasePipelineStep):
                     year = None
                 
                 # Check each available option
+                pricing_mode = cfg.get_pricing_mode() if hasattr(cfg, 'get_pricing_mode') else 'msrp_only'
                 for option in all_options:
                     try:
                         # Option presence (pass trim if supported)
@@ -282,28 +307,34 @@ class TransformationStep(BasePipelineStep):
                             # Override value per generation if configured
                             opt_id = str(option_info['id'])
                             override_val = get_override_value(opt_id, model, year)
-                            if override_val is not None:
+                            if pricing_mode != 'msrp_only' and override_val is not None:
                                 option_info['value'] = int(override_val)
 
                             listing_options['detected_options'].append(option_info)
-                            listing_options['total_options_value'] += option_info['value']
+                            if pricing_mode != 'msrp_only':
+                                listing_options['total_options_value'] += option_info['value']
                             # Add MSRP if available for this option id
                             # Prefer generation override as MSRP if present; else fallback to default catalog
                             if override_val is not None:
                                 listing_options['total_options_msrp'] += int(override_val)
                             elif opt_id in msrp_catalog_norm:
                                 listing_options['total_options_msrp'] += int(msrp_catalog_norm[opt_id])
-                            
-                            # Group by category
-                            category = option_info['category']
-                            if category not in listing_options['options_by_category']:
-                                listing_options['options_by_category'][category] = []
-                            listing_options['options_by_category'][category].append(option_info)
+                            else:
+                                # Default MSRP for options without a known MSRP in catalog/overrides
+                                listing_options['total_options_msrp'] += 494
+                        
+                        # Group by category
+                        category = option_info['category']
+                        if category not in listing_options['options_by_category']:
+                            listing_options['options_by_category'][category] = []
+                        listing_options['options_by_category'][category].append(option_info)
                     
                     except Exception as e:
                         print(f"       ⚠️  Error checking option: {e}")
                         continue
                 
+                # Summaries
+                listing_options['total_options'] = len(listing_options.get('detected_options', []))
                 options_data.append(listing_options)
                 
                 if listing_options['detected_options']:
@@ -365,7 +396,8 @@ class TransformationStep(BasePipelineStep):
                     
                     # Options summary
                     'total_options': options.get('total_options', 0),
-                    'total_options_value': options.get('total_options_value', 0),
+                    # Write legacy field as blank when pricing_mode is msrp_only
+                    'total_options_value': '' if str(config.get('pricing_mode', 'msrp_only')).lower() == 'msrp_only' else options.get('total_options_value', 0),
                     'total_options_msrp': options.get('total_options_msrp', 0),
                     'options_categories': ', '.join(options.get('options_by_category', {}).keys()),
                     'options_list': ', '.join([opt.get('display', '') for opt in options.get('detected_options', [])])

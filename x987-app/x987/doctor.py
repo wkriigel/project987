@@ -157,12 +157,14 @@ def check_configuration() -> Dict[str, Any]:
         if not urls:
             errors.append("No search URLs configured")
         
-        # Check fair value settings
+        # Check fair value settings only if not in MSRP-only mode
+        mode = config.get_pricing_mode() if hasattr(config, 'get_pricing_mode') else 'msrp_only'
         fv_config = config.get_fair_value_config()
-        required_fv = ["base_value_usd", "year_step_usd", "s_premium_usd"]
-        for key in required_fv:
-            if key not in fv_config:
-                errors.append(f"Missing fair_value.{key}")
+        if mode != 'msrp_only':
+            required_fv = ["base_value_usd", "year_step_usd", "s_premium_usd"]
+            for key in required_fv:
+                if key not in fv_config:
+                    errors.append(f"Missing fair_value.{key}")
         
         if errors:
             return {
@@ -171,10 +173,17 @@ def check_configuration() -> Dict[str, Any]:
                 "details": "Configuration errors:\n" + "\n".join(f"• {e}" for e in errors)
             }
         else:
+            details = [
+                f"Configuration loaded successfully",
+                f"Pricing mode: {mode}",
+                f"Search URLs: {len(urls)}"
+            ]
+            if mode != 'msrp_only':
+                details.append(f"Fair value params: {len(fv_config)}")
             return {
                 "name": "Configuration",
                 "status": "PASS",
-                "details": f"Configuration loaded successfully\nSearch URLs: {len(urls)}\nFair value params: {len(fv_config)}"
+                "details": "\n".join(details)
             }
             
     except Exception as e:

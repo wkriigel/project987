@@ -30,9 +30,15 @@ def validate_config(config: Dict[str, Any]) -> None:
         _validate_required_sections(config)
         _validate_search_section(config.get('search', {}))
         _validate_scraping_section(config.get('scraping', {}))
-        _validate_fair_value_section(config.get('fair_value', {}))
+        # In MSRP-only mode, fair_value section is optional (soft-deprecated)
+        mode = str(config.get('pricing_mode', 'msrp_only')).lower()
+        if mode != 'msrp_only':
+            _validate_fair_value_section(config.get('fair_value', {}))
+        _validate_pricing_mode(config.get('pricing_mode', 'msrp_only'))
         _validate_options_section(config.get('options_v2', {}))
         _validate_pipeline_section(config.get('pipeline', {}))
+        _validate_vehicles_section(config.get('vehicles', {}))
+        _validate_options_per_generation(config.get('options_per_generation', {}))
         _validate_view_section(config.get('view', {}))
         
     except Exception as e:
@@ -42,7 +48,11 @@ def validate_config(config: Dict[str, Any]) -> None:
 
 def _validate_required_sections(config: Dict[str, Any]) -> None:
     """Validate that required configuration sections exist"""
-    required_sections = ['search', 'scraping', 'fair_value']
+    required_sections = ['search', 'scraping']
+    # fair_value is only required in non-MSRP-only modes
+    mode = str(config.get('pricing_mode', 'msrp_only')).lower()
+    if mode != 'msrp_only':
+        required_sections.append('fair_value')
     
     for section in required_sections:
         if section not in config:
@@ -98,6 +108,13 @@ def _validate_scraping_section(scraping_config: Dict[str, Any]) -> None:
         timeout = scraping_config['timeout_seconds']
         if not isinstance(timeout, (int, float)) or timeout < 1:
             raise ConfigError("Scraping timeout must be a positive number")
+
+def _validate_pricing_mode(mode: Any) -> None:
+    """Validate pricing_mode flag"""
+    allowed = {'msrp_only', 'current'}
+    m = str(mode).lower() if mode is not None else 'msrp_only'
+    if m not in allowed:
+        raise ConfigError(f"pricing_mode must be one of {sorted(allowed)}")
 
 def _validate_fair_value_section(fair_value_config: Dict[str, Any]) -> None:
     """Validate fair value configuration section"""
@@ -177,6 +194,90 @@ def _validate_view_section(view_config: Dict[str, Any]) -> None:
         color = view_config['color_output']
         if not isinstance(color, bool):
             raise ConfigError("View color output must be a boolean")
+
+def _validate_vehicles_section(vehicles_config: Dict[str, Any]) -> None:
+    """Validate vehicles (models/generations/trims) section"""
+    if not vehicles_config:
+        return
+    if not isinstance(vehicles_config, dict):
+        raise ConfigError("'vehicles' must be a table (dict)")
+    models = vehicles_config.get('models', {})
+    if not isinstance(models, dict):
+        raise ConfigError("'vehicles.models' must be a table (dict)")
+    for model_key, model_cfg in models.items():
+        if not isinstance(model_cfg, dict):
+            raise ConfigError(f"vehicles.models.{model_key} must be a table")
+        name = model_cfg.get('name')
+        if not isinstance(name, str) or not name:
+            raise ConfigError(f"vehicles.models.{model_key}.name must be a non-empty string")
+        syns = model_cfg.get('synonyms', [])
+        if not isinstance(syns, list) or not all(isinstance(s, str) for s in syns):
+            raise ConfigError(f"vehicles.models.{model_key}.synonyms must be a list of strings")
+        # Validate generations (optional)
+        gens = model_cfg.get('generations', [])
+        if gens:
+            if not isinstance(gens, list):
+                raise ConfigError(f"vehicles.models.{model_key}.generations must be a list")
+            for g in gens:
+                if not isinstance(g, dict):
+                    raise ConfigError(f"vehicles.models.{model_key}.generations[] must be tables")
+                code = g.get('code')
+                if not isinstance(code, str) or not code:
+                    raise ConfigError(f"vehicles.models.{model_key}.generations.code must be a non-empty string")
+                years = g.get('years', {})
+                if not isinstance(years, dict) or 'min' not in years:
+                    raise ConfigError(f"vehicles.models.{model_key}.generations.years must include 'min'")
+                min_year = years.get('min')
+                max_year = years.get('max', None)
+                if not isinstance(min_year, int):
+                    raise ConfigError(f"vehicles.models.{model_key}.generations.years.min must be an integer")
+                if max_year is not None and not isinstance(max_year, int):
+                    raise ConfigError(f"vehicles.models.{model_key}.generations.years.max must be an integer if present")
+                trims = g.get('trims', [])
+                if not isinstance(trims, list):
+                    raise ConfigError(f"vehicles.models.{model_key}.generations.trims must be a list")
+                for t in trims:
+                    if not isinstance(t, dict):
+                        raise ConfigError(f"vehicles.models.{model_key}.generations.trims[] must be tables")
+                    tname = t.get('name')
+                    if not isinstance(tname, str) or not tname:
+                        raise ConfigError(f"vehicles.models.{model_key}.generations.trims.name must be a non-empty string")
+                    tsyns = t.get('synonyms', [])
+                    if not isinstance(tsyns, list) or not all(isinstance(s, str) for s in tsyns):
+                        raise ConfigError(f"vehicles.models.{model_key}.generations.trims.synonyms must be list of strings")
+
+def _validate_options_per_generation(opg: Dict[str, Any]) -> None:
+    """Validate options_per_generation section"""
+    if not opg:
+        return
+    if not isinstance(opg, dict):
+        raise ConfigError("'options_per_generation' must be a table (dict)")
+    # Defaults
+    defaults = opg.get('defaults', {})
+    if defaults:
+        if not isinstance(defaults, dict):
+            raise ConfigError("options_per_generation.defaults must be a table")
+        top = defaults.get('top_options', [])
+        if not isinstance(top, list) or not all(isinstance(s, str) for s in top):
+            raise ConfigError("options_per_generation.defaults.top_options must be a list of strings")
+    # Per-model entries
+    for model_key, model_map in opg.items():
+        if model_key == 'defaults':
+            continue
+        if not isinstance(model_map, dict):
+            raise ConfigError(f"options_per_generation.{model_key} must be a table")
+        # Each key under model is a generation code mapping to { msrp = { id = int } }
+        for gen_code, gen_map in model_map.items():
+            if not isinstance(gen_map, dict):
+                raise ConfigError(f"options_per_generation.{model_key}.{gen_code} must be a table")
+            msrp = gen_map.get('msrp', {})
+            if not isinstance(msrp, dict):
+                raise ConfigError(f"options_per_generation.{model_key}.{gen_code}.msrp must be a table")
+            for opt_id, val in msrp.items():
+                if not isinstance(opt_id, str):
+                    raise ConfigError(f"Option id in MSRP map must be a string (model {model_key} gen {gen_code})")
+                if not isinstance(val, int) or val < 0:
+                    raise ConfigError(f"Option MSRP for '{opt_id}' must be a non-negative integer (model {model_key} gen {gen_code})")
 
 def validate_url(url: str) -> bool:
     """Validate a single URL"""
