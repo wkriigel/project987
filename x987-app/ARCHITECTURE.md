@@ -69,7 +69,7 @@ x987-app/
 │   │   └── text.py              # Text processing utilities
 │   ├── schema.py                 # Data models and schemas
 │   ├── settings.py               # Legacy settings (deprecated)
-│   ├── fair_value.py            # Fair value calculation logic
+│   ├── fair_value.py            # Legacy fair value step (no-op in MSRP-only)
 │   ├── options_v2.py            # Options detection system
 │   └── doctor.py                 # System diagnostics
 ```

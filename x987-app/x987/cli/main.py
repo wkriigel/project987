@@ -431,8 +431,11 @@ def cmd_transform_step(args):
             'scraping_data': scraping_data
         }
 
-        # Execute transformation
-        print("\n🔄 Executing: transformation → deduplication → fair_value → ranking → view")
+        # Execute transformation forward (pricing-mode aware)
+        from ..config import get_config as _get_cfg
+        pmode = _get_cfg().get_pricing_mode() if hasattr(_get_cfg(), 'get_pricing_mode') else 'msrp_only'
+        pipeline_str = "transformation → deduplication → ranking → view" if pmode == 'msrp_only' else "transformation → deduplication → fair_value → ranking → view"
+        print(f"\n🔄 Executing: {pipeline_str}")
         tr_result = TRANSFORMATION_STEP.execute(config, prev)
         if not tr_result or not tr_result.is_success:
             print(f"❌ Transformation failed: {tr_result.error if tr_result else 'unknown error'}")
@@ -446,12 +449,13 @@ def cmd_transform_step(args):
             return 1
         prev['deduplication'] = dd_result
 
-        # Execute fair_value
-        fv_result = FAIR_VALUE_STEP.execute(config, prev)
-        if not fv_result or not fv_result.is_success:
-            print(f"❌ Fair value failed: {fv_result.error if fv_result else 'unknown error'}")
-            return 1
-        prev['fair_value'] = fv_result
+        # Execute fair_value only if not MSRP-only mode
+        if pmode != 'msrp_only':
+            fv_result = FAIR_VALUE_STEP.execute(config, prev)
+            if not fv_result or not fv_result.is_success:
+                print(f"❌ Fair value failed: {fv_result.error if fv_result else 'unknown error'}")
+                return 1
+            prev['fair_value'] = fv_result
 
         # Execute ranking
         rk_result = RANKING_STEP.execute(config, prev)
@@ -511,10 +515,12 @@ def cmd_config(args):
         summary = config.get_config_summary()
         
         print(f"📁 Config file: {summary['config_file']}")
+        print(f"🏷️  Pricing mode: {summary.get('pricing_mode', 'msrp_only')}")
         print(f"🔍 Search URLs: {summary['search_urls_count']}")
         print(f"🕷️  Scraping concurrency: {summary['scraping_concurrency']}")
         print(f"⏱️  Polite delay: {summary['scraping_polite_delay_ms']}ms")
-        print(f"💰 Fair value base: ${summary['fair_value_base']:,}")
+        if str(summary.get('pricing_mode', 'msrp_only')).lower() != 'msrp_only' and summary.get('fair_value_base') is not None:
+            print(f"💰 Fair value base: ${summary['fair_value_base']:,}")
         print(f"🔧 Options enabled: {summary['options_enabled']}")
         
         return 0
