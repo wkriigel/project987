@@ -222,9 +222,8 @@ class ScrapingStep(BasePipelineStep):
                         
                         # Cache decision
                         canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
-                        current_price = url_data.get('price')
                         if cache_enabled:
-                            should_skip, reason = listing_cache.should_skip(canonical, current_price, ttl_days=ttl_days)
+                            should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
                             if should_skip:
                                 rec = listing_cache.get(canonical)
                                 if rec and rec.data_blob:
@@ -318,8 +317,6 @@ class ScrapingStep(BasePipelineStep):
                                 listing_cache.save_result(
                                     canonical,
                                     scraped_result['extracted_data'],
-                                    price=url_data.get('price'),
-                                    mileage=url_data.get('mileage') if 'mileage' in url_data else None,
                                 )
                                 listing_cache.save()
                             except Exception:
@@ -457,7 +454,7 @@ class ScrapingStep(BasePipelineStep):
                             # Cache decision before creating page
                             canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
                             if cache_enabled:
-                                should_skip, reason = listing_cache.should_skip(canonical, url_data.get('price'), ttl_days=ttl_days)
+                                should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
                                 if should_skip:
                                     rec = listing_cache.get(canonical)
                                     if rec and rec.data_blob:
@@ -537,8 +534,6 @@ class ScrapingStep(BasePipelineStep):
                                         listing_cache.save_result(
                                             canonical,
                                             mapped['extracted_data'],
-                                            price=url_data.get('price'),
-                                            mileage=url_data.get('mileage'),
                                         )
                                         listing_cache.save()
                                     except Exception:
