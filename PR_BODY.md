@@ -62,6 +62,20 @@ How to test locally
 4) Start FE: `pnpm --filter @x987/fe dev`.
 5) Verify FE “MSRP” column sorts descending and options chips render.
 
+New in this PR: Seen Registry + Cache Skip
+- Collection now annotates `canonical_url`, `is_new`, and `first_seen_at`, and surfaces counts in `collection_stats`.
+- Scraping now uses a JSON-backed cache (`x987-app/x987-data/listing_cache.json`) to skip VDP loads when TTL valid and price unchanged.
+- Serial and concurrent scrapers both respect cache; summary prints `Cache hits` and `Network scrapes`.
+- CSVs include per-row `is_new`, `first_seen_at`, `cache_hit`, and `cache_reason` for visibility.
+
+Quick validation
+- First run seeds the cache: expect `Cache hits: 0 | Network scrapes: N`.
+- Immediate second run: expect `Cache hits: ~N | Network scrapes: 0`.
+- To reset, delete `x987-app/x987-data/listing_cache.json`.
+
+Notes
+- `view.py` requires `rich`; optional for pipeline execution. Install with `pip install rich` if you want the view step registered.
+
 Config notes
 - `pricing_mode` at top‑level of `config.toml` and `config-v2.toml`.
 - `fair_value` table ignored in MSRP‑only and optional in validation.
@@ -72,4 +86,3 @@ Acceptance criteria mapping
 - FE shows MSRP + options only; default sort is MSRP desc: ✅
 - Tests: requires follow‑up adjustments (Phase 2): ⚠️ pending
 - Docs reflect MSRP‑only: Phase 2 cleanup: ⚠️ pending
-
