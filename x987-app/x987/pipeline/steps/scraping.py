@@ -19,6 +19,8 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from .base import BasePipelineStep, StepResult
+from ..seen_registry import canonicalize_url
+from ..listing_cache import ListingCache
 
 
 class ScrapingStep(BasePipelineStep):
@@ -130,11 +132,15 @@ class ScrapingStep(BasePipelineStep):
                 'scraping_id': i + 1,
                 'source_url': url_data.get('source_url', ''),
                 'listing_url': url_data.get('listing_url', ''),
+                'canonical_url': url_data.get('canonical_url', ''),
                 'title': url_data.get('title', ''),
                 'price': url_data.get('price', ''),
+                'mileage': url_data.get('mileage', ''),
                 'year': url_data.get('year', ''),
                 'model': url_data.get('model', ''),
                 'collection_timestamp': url_data.get('collection_timestamp', ''),
+                'is_new': url_data.get('is_new', ''),
+                'first_seen_at': url_data.get('first_seen_at', ''),
                 'preparation_timestamp': datetime.now().isoformat(),
                 'scraping_status': 'pending'
             }
@@ -193,6 +199,17 @@ class ScrapingStep(BasePipelineStep):
                 except Exception:
                     context = browser.new_context()
                 
+                # Prepare cache
+                cache_cfg = (scraping_config.get('cache') or {}) if isinstance(scraping_config, dict) else {}
+                cache_enabled = bool(cache_cfg.get('enabled', True))
+                ttl_days = int(cache_cfg.get('ttl_days', 3))
+                # Place cache adjacent to results directory
+                # Use default results path here (config not in scope in this method)
+                output_dir = Path('x987-data/results')
+                cache_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
+                cache_path = cache_dir / 'listing_cache.json'
+                listing_cache = ListingCache(cache_path)
+
                 # Process URLs with polite delays
                 for i, url_data in enumerate(prepared_urls):
                     try:
@@ -203,6 +220,38 @@ class ScrapingStep(BasePipelineStep):
                         
                         print(f"        🕷️  Scraping {i+1}/{len(prepared_urls)}: {self._get_short_url(listing_url)}")
                         
+                        # Cache decision
+                        canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
+                        current_price = url_data.get('price')
+                        if cache_enabled:
+                            should_skip, reason = listing_cache.should_skip(canonical, current_price, ttl_days=ttl_days)
+                            if should_skip:
+                                rec = listing_cache.get(canonical)
+                                if rec and rec.data_blob:
+                                    scraped_result = {
+                                        'scraping_id': url_data.get('scraping_id'),
+                                        'source_url': url_data.get('source_url', ''),
+                                        'listing_url': listing_url,
+                                        'canonical_url': canonical,
+                                        'title': url_data.get('title', ''),
+                                        'collection_timestamp': url_data.get('collection_timestamp', ''),
+                                        'scraping_timestamp': datetime.now().isoformat(),
+                                        'scraping_status': 'success',
+                                        'scraping_method': 'cache',
+                                        'is_new': url_data.get('is_new', ''),
+                                        'first_seen_at': url_data.get('first_seen_at', ''),
+                                        'cache_hit': True,
+                                        'cache_reason': reason,
+                                        'raw_text': '',
+                                        'raw_html': '',
+                                        'extracted_data': rec.data_blob
+                                    }
+                                    scraped_data.append(scraped_result)
+                                    successful_count += 1
+                                    print(f"        💾 Cache hit: {reason}")
+                                    # Skip network fetch
+                                    continue
+
                         # Create new page for each URL to avoid state issues
                         page = context.new_page()
                         
@@ -242,11 +291,16 @@ class ScrapingStep(BasePipelineStep):
                                 'scraping_id': url_data.get('scraping_id'),
                                 'source_url': url_data.get('source_url', ''),
                                 'listing_url': listing_url,
+                                'canonical_url': url_data.get('canonical_url', ''),
                                 'title': url_data.get('title', ''),
                                 'collection_timestamp': url_data.get('collection_timestamp', ''),
                                 'scraping_timestamp': datetime.now().isoformat(),
                                 'scraping_status': 'success',
                                 'scraping_method': 'universal_scraper_with_profiles',
+                                'is_new': url_data.get('is_new', ''),
+                                'first_seen_at': url_data.get('first_seen_at', ''),
+                                'cache_hit': False,
+                                'cache_reason': '',
                                 'raw_text': scraping_result.data.get('raw_dom_text') or fallback_text,
                                 'raw_html': scraping_result.data.get('raw_html', ''),
                                 'extracted_data': {
@@ -259,6 +313,17 @@ class ScrapingStep(BasePipelineStep):
                             scraped_data.append(scraped_result)
                             successful_count += 1
                             print(f"        ✅ Successfully scraped: {scraping_result.data.get('source', 'unknown')}")
+                            # Save to cache
+                            try:
+                                listing_cache.save_result(
+                                    canonical,
+                                    scraped_result['extracted_data'],
+                                    price=url_data.get('price'),
+                                    mileage=url_data.get('mileage') if 'mileage' in url_data else None,
+                                )
+                                listing_cache.save()
+                            except Exception:
+                                pass
                             
                         else:
                             # Handle failed scraping
@@ -266,11 +331,16 @@ class ScrapingStep(BasePipelineStep):
                                 'scraping_id': url_data.get('scraping_id'),
                                 'source_url': url_data.get('source_url', ''),
                                 'listing_url': listing_url,
+                                'canonical_url': url_data.get('canonical_url', ''),
                                 'title': url_data.get('title', ''),
                                 'collection_timestamp': url_data.get('collection_timestamp', ''),
                                 'scraping_timestamp': datetime.now().isoformat(),
                                 'scraping_status': 'failed',
                                 'scraping_method': 'universal_scraper_with_profiles',
+                                'is_new': url_data.get('is_new', ''),
+                                'first_seen_at': url_data.get('first_seen_at', ''),
+                                'cache_hit': False,
+                                'cache_reason': '',
                                 'raw_text': '',
                                 'raw_html': '',
                                 'extracted_data': {
@@ -346,6 +416,16 @@ class ScrapingStep(BasePipelineStep):
                 polite_delay_ms = int(scraping_config.get('polite_delay_ms', 1000))
                 sem = asyncio.Semaphore(concurrency)
 
+                # Prepare cache (shared across workers, simple JSON file)
+                cache_cfg = (scraping_config.get('cache') or {}) if isinstance(scraping_config, dict) else {}
+                ttl_days = int(cache_cfg.get('ttl_days', 3))
+                cache_enabled = bool(cache_cfg.get('enabled', True))
+                # Default results path; consistent with serial path
+                output_dir = Path('x987-data/results')
+                cache_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
+                cache_path = cache_dir / 'listing_cache.json'
+                listing_cache = ListingCache(cache_path)
+
                 async with async_playwright() as p:
                     browser = await p.chromium.launch(headless=not headful)
                     context = await browser.new_context()
@@ -374,6 +454,34 @@ class ScrapingStep(BasePipelineStep):
                             if not listing_url:
                                 failed_count += 1
                                 return
+                            # Cache decision before creating page
+                            canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
+                            if cache_enabled:
+                                should_skip, reason = listing_cache.should_skip(canonical, url_data.get('price'), ttl_days=ttl_days)
+                                if should_skip:
+                                    rec = listing_cache.get(canonical)
+                                    if rec and rec.data_blob:
+                                        results.append({
+                                            'scraping_id': url_data.get('scraping_id'),
+                                            'source_url': url_data.get('source_url', ''),
+                                            'listing_url': listing_url,
+                                            'canonical_url': canonical,
+                                            'title': url_data.get('title', ''),
+                                            'collection_timestamp': url_data.get('collection_timestamp', ''),
+                                            'scraping_timestamp': datetime.now().isoformat(),
+                                            'scraping_status': 'success',
+                                            'scraping_method': 'cache',
+                                            'is_new': url_data.get('is_new', ''),
+                                            'first_seen_at': url_data.get('first_seen_at', ''),
+                                            'cache_hit': True,
+                                            'cache_reason': reason,
+                                            'raw_text': '',
+                                            'raw_html': '',
+                                            'extracted_data': rec.data_blob,
+                                        })
+                                        successful_count += 1
+                                        return
+
                             page = await context.new_page()
                             try:
                                 # Headers
@@ -400,11 +508,16 @@ class ScrapingStep(BasePipelineStep):
                                         'scraping_id': url_data.get('scraping_id'),
                                         'source_url': url_data.get('source_url', ''),
                                         'listing_url': listing_url,
+                                        'canonical_url': canonical,
                                         'title': url_data.get('title', ''),
                                         'collection_timestamp': url_data.get('collection_timestamp', ''),
                                         'scraping_timestamp': datetime.now().isoformat(),
                                         'scraping_status': 'success',
                                         'scraping_method': 'universal_scraper_async',
+                                        'is_new': url_data.get('is_new', ''),
+                                        'first_seen_at': url_data.get('first_seen_at', ''),
+                                        'cache_hit': False,
+                                        'cache_reason': '',
                                         # Ensure downstream transformation has text to parse
                                         'raw_text': result.data.get('raw_dom_text') or fallback_text,
                                         'extracted_data': {
@@ -419,16 +532,32 @@ class ScrapingStep(BasePipelineStep):
                                         mapped['raw_text'] = result.data.get('raw_dom_text', '')
                                     results.append(mapped)
                                     successful_count += 1
+                                    # Save to cache
+                                    try:
+                                        listing_cache.save_result(
+                                            canonical,
+                                            mapped['extracted_data'],
+                                            price=url_data.get('price'),
+                                            mileage=url_data.get('mileage'),
+                                        )
+                                        listing_cache.save()
+                                    except Exception:
+                                        pass
                                 else:
                                     results.append({
                                         'scraping_id': url_data.get('scraping_id'),
                                         'source_url': url_data.get('source_url', ''),
                                         'listing_url': listing_url,
+                                        'canonical_url': canonical,
                                         'title': url_data.get('title', ''),
                                         'collection_timestamp': url_data.get('collection_timestamp', ''),
                                         'scraping_timestamp': datetime.now().isoformat(),
                                         'scraping_status': 'failed',
                                         'scraping_method': 'universal_scraper_async',
+                                        'is_new': url_data.get('is_new', ''),
+                                        'first_seen_at': url_data.get('first_seen_at', ''),
+                                        'cache_hit': False,
+                                        'cache_reason': '',
                                         'extracted_data': {'source': 'unknown', 'error': result.error}
                                     })
                                     failed_count += 1
@@ -437,11 +566,16 @@ class ScrapingStep(BasePipelineStep):
                                     'scraping_id': url_data.get('scraping_id'),
                                     'source_url': url_data.get('source_url', ''),
                                     'listing_url': url_data.get('listing_url', ''),
+                                    'canonical_url': canonical,
                                     'title': url_data.get('title', ''),
                                     'collection_timestamp': url_data.get('collection_timestamp', ''),
                                     'scraping_timestamp': datetime.now().isoformat(),
                                     'scraping_status': 'error',
                                     'scraping_method': 'universal_scraper_async',
+                                    'is_new': url_data.get('is_new', ''),
+                                    'first_seen_at': url_data.get('first_seen_at', ''),
+                                    'cache_hit': False,
+                                    'cache_reason': '',
                                     'extracted_data': {'source': 'unknown', 'error': str(e)}
                                 })
                                 failed_count += 1
@@ -556,10 +690,10 @@ class ScrapingStep(BasePipelineStep):
                     # Define a stable set of fields and avoid huge inline blobs
                     base_fields = [
                         'scraping_id', 'source_url', 'listing_url', 'title',
-                        'collection_timestamp', 'scraping_timestamp', 'scraping_status',
+                        'canonical_url', 'collection_timestamp', 'scraping_timestamp', 'scraping_status',
                         'validation_status', 'validation_score'
                     ]
-                    extra_fields = ['scraping_method']
+                    extra_fields = ['scraping_method', 'is_new', 'first_seen_at', 'cache_hit', 'cache_reason']
                     artifact_fields = ['raw_html_path', 'raw_text_path']
                     fieldnames = base_fields + extra_fields + ['extracted_data'] + artifact_fields
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -636,7 +770,14 @@ class ScrapingStep(BasePipelineStep):
         # Calculate average validation score
         validation_scores = [d.get('validation_score', 0) for d in processed_data if d.get('validation_score') is not None]
         avg_validation_score = sum(validation_scores) / len(validation_scores) if validation_scores else 0
-        
+        # Cache metrics
+        cache_hits = len([d for d in processed_data if d.get('cache_hit') or d.get('scraping_method') == 'cache'])
+        network_requests = len(processed_data) - cache_hits
+        try:
+            print(f"🧠 Cache hits: {cache_hits} | Network scrapes: {network_requests}")
+        except Exception:
+            pass
+
         summary = {
             "total_pages_scraped": total_urls,
             "scraping_data": processed_data,
@@ -644,6 +785,8 @@ class ScrapingStep(BasePipelineStep):
             "failed_scrapes": failed_scrapes,
             "valid_data": valid_data,
             "invalid_data": invalid_data,
+            "cache_hits": cache_hits,
+            "network_requests": network_requests,
             "saved_files": saved_files,
             "scraping_stats": {
                 "scraping_success_rate": successful_scrapes / total_urls if total_urls > 0 else 0,

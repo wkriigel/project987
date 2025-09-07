@@ -18,6 +18,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from .base import BasePipelineStep, StepResult
+from ..seen_registry import SeenRegistry, canonicalize_url
 
 
 class CollectionStep(BasePipelineStep):
@@ -107,6 +108,17 @@ class CollectionStep(BasePipelineStep):
                 # Step 3: Process and deduplicate collected URLs
                 print("🔍 Step 3: Processing collected URLs...")
                 processed_urls = self._process_collected_urls(collection_results)
+
+                # Step 3.1: Annotate new/first-seen flags and persist registry
+                print("🧭 Step 3.1: Marking new listings...")
+                processed_urls = self._annotate_new_flags(processed_urls, config)
+
+                # Print quick stats
+                try:
+                    new_count = len([r for r in processed_urls if r.get('is_new')])
+                    print(f"🆕 New listings: {new_count} | Seen before: {len(processed_urls)-new_count}")
+                except Exception:
+                    pass
 
                 # Step 4: Save collection results
                 print("📄 Step 4: Saving collection results...")
@@ -320,12 +332,53 @@ class CollectionStep(BasePipelineStep):
                                 if title_elem:
                                     title = title_elem.inner_text().strip()
                             
+                            # Collect cheap, minimal fields for caching/metrics
+                            try:
+                                from ...utils.extractors import (
+                                    extract_price_unified,
+                                    extract_mileage_unified,
+                                    extract_vehicle_info_unified,
+                                )
+                            except Exception:
+                                extract_price_unified = extract_mileage_unified = lambda *_a, **_k: None
+                                def extract_vehicle_info_unified(_t):
+                                    return None, None, None
+
+                            try:
+                                container_text = link.evaluate(
+                                    "el => (el.closest('li.result-list-item')?.innerText) || el.innerText || ''"
+                                ) or ""
+                            except Exception:
+                                container_text = title or ""
+
+                            price = None
+                            mileage = None
+                            year = None
+                            model = None
+                            try:
+                                price = extract_price_unified(container_text) or extract_price_unified(title)
+                            except Exception:
+                                pass
+                            try:
+                                mileage = extract_mileage_unified(container_text)
+                            except Exception:
+                                pass
+                            try:
+                                y, m, _t = extract_vehicle_info_unified(title or container_text)
+                                year, model = y, m
+                            except Exception:
+                                year, model = None, None
+
                             # Store minimal data - just the URL and basic info
                             # The actual data extraction will be done by the scraper step
                             listing_data = {
                                 'source_url': search_url,
                                 'listing_url': full_url,
                                 'title': title,
+                                'price': price,
+                                'mileage': mileage,
+                                'year': year,
+                                'model': model,
                                 'collection_timestamp': datetime.now().isoformat(),
                                 'scraping_method': 'autotempest_urls_only'
                             }
@@ -378,6 +431,38 @@ class CollectionStep(BasePipelineStep):
             result['processing_status'] = 'success'
         
         return unique_results
+
+    def _annotate_new_flags(self, processed_urls: List[Dict[str, Any]], config: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Annotate each processed URL with is_new/first_seen_at using a persistent registry."""
+        # Determine registry file location adjacent to output directory
+        output_dir = Path(config.get('pipeline', {}).get('output_directory', 'x987-data/results'))
+        registry_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
+        registry_path = registry_dir / 'seen_registry.json'
+
+        registry = SeenRegistry(registry_path)
+        now_iso = datetime.now().isoformat()
+
+        for row in processed_urls:
+            raw_url = row.get('listing_url', '') or ''
+            canon = canonicalize_url(raw_url)
+            row['canonical_url'] = canon
+            if registry.is_seen(canon):
+                row['is_new'] = False
+                row['first_seen_at'] = registry.get_first_seen(canon) or ''
+            else:
+                row['is_new'] = True
+                row['first_seen_at'] = now_iso
+            # Always update last_seen
+            registry.mark_seen(canon, now_iso=now_iso)
+
+        # Persist registry after batch
+        try:
+            registry.save()
+            print(f"       ✅ Updated seen registry: {registry_path}")
+        except Exception as e:
+            print(f"       ⚠️  Failed to update seen registry: {e}")
+
+        return processed_urls
     
     def _save_collection_results(self, processed_urls: List[Dict[str, Any]], config: Dict[str, Any]) -> List[str]:
         """Save collection results to files"""
@@ -463,6 +548,10 @@ class CollectionStep(BasePipelineStep):
                 source_counts[source] = 0
             source_counts[source] += 1
         
+        # Count new vs seen
+        new_count = len([r for r in processed_urls if r.get('is_new')])
+        seen_count = total_urls_collected - new_count
+
         summary = {
             "urls_collected": total_urls_collected,
             "collection_data": processed_urls,
@@ -474,7 +563,9 @@ class CollectionStep(BasePipelineStep):
                 "valid_sources": valid_sources,
                 "failed_sources": failed_sources,
                 "success_rate": valid_sources / total_sources if total_sources > 0 else 0,
-                "urls_per_source": total_urls_collected / valid_sources if valid_sources > 0 else 0
+                "urls_per_source": total_urls_collected / valid_sources if valid_sources > 0 else 0,
+                "new_count": new_count,
+                "seen_count": seen_count
             },
             "source_breakdown": source_counts,
             "collection_timestamp": datetime.now().isoformat()
