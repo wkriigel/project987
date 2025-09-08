@@ -1,41 +1,11 @@
-# Node / package managers
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+# Local data outputs
+x987-app/x987-data/
+
+# Node artifacts (if any)
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
 
-# Build outputs
-dist/
-build/
-storybook-static/
-coverage/
-
-# Vite/Temp
-.vite/
-.vite-inspect/
-*.local
-
-# Logs
-*.log
-*.log.*
-logs/
-*.pid
-*.seed
-*.pid.lock
-
-# Env/Secrets
-.env
-.env.*.local
-
-# Editor/OS
-.DS_Store
-.vscode/
-.idea/
-*.swp
-
-# Misc
-*.tgz
