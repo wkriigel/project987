@@ -10,7 +10,7 @@ Key Changes
 - Config
   - New: top‑level `pricing_mode` with values: `msrp_only` | `current`; default is `msrp_only`.
   - `fair_value` section is optional/ignored in MSRP‑only mode; validation updated to reflect that.
-  - Files: `x987-app/x987/config/defaults.py`, `x987-app/x987/config/manager.py`, `x987-app/x987/config/validation.py`, `x987-config/config.toml`, `x987-config/config-v2.toml`.
+  - Files: `x987-app/x987/config/defaults.py`, `x987-app/x987/config/manager.py`, `x987-app/x987/config/validation.py`, `x987-config/config.toml`.
 
 - Options detection
   - `x987-app/x987/options/detector.py`: compute per‑option MSRP instead of “value”. Uses per‑generation overrides, else catalog, else 494 fallback. Still returns `(display, value, category)` to preserve API shape; value now equals MSRP.
@@ -77,7 +77,7 @@ Notes
 - `view.py` requires `rich`; optional for pipeline execution. Install with `pip install rich` if you want the view step registered.
 
 Config notes
-- `pricing_mode` at top‑level of `config.toml` and `config-v2.toml`.
+- `pricing_mode` at top‑level of `config.toml`.
 - `fair_value` table ignored in MSRP‑only and optional in validation.
 
 Acceptance criteria mapping

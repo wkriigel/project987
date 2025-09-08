@@ -12,14 +12,38 @@ function ascendCandidates(relatives: string[]): string | null {
   return null
 }
 
+export function listAscendCandidates(relatives: string[]): string[] {
+  const out: string[] = []
+  for (let i = 0; i < 6; i++) {
+    const base = path.resolve(process.cwd(), Array(i).fill('..').join(path.sep) || '.')
+    for (const rel of relatives) {
+      out.push(path.join(base, rel))
+    }
+  }
+  return out
+}
+
 export function findResultsDir(): string | null {
   // Allow explicit override
   const envDir = process.env.RANKING_RESULTS_DIR
   if (envDir && fs.existsSync(envDir)) return envDir
   // Default: prefer the active app results dir to avoid confusion with old paths
   return ascendCandidates([
+    // Canonical top-level data directory
+    path.join('x987-data', 'results'),
+    // Legacy (older paths kept as fallback)
     path.join('x987-app', 'x987-data', 'results')
   ])
+}
+
+export function resultsDirCandidates(): string[] {
+  const rels = [
+    path.join('x987-data', 'results'),
+    path.join('x987-app', 'x987-data', 'results')
+  ]
+  const envDir = process.env.RANKING_RESULTS_DIR
+  const list = listAscendCandidates(rels)
+  return envDir ? [envDir, ...list] : list
 }
 
 export function findConfigPath(): string | null {
@@ -31,8 +55,10 @@ export function findConfigPath(): string | null {
 export function findGenerationCatalogJson(): string | null {
   // Look for a generated JSON catalog that FE can consume
   return ascendCandidates([
-    path.join('x987-web', 'apps', 'api', 'data', 'generation_catalog.json'),
+    // Canonical path first
     path.join('x987-data', 'metadata', 'generation_catalog.json'),
+    // Fallbacks (legacy paths)
+    path.join('x987-web', 'apps', 'api', 'data', 'generation_catalog.json'),
     path.join('x987-data', 'metadata', 'generations.json')
   ])
 }
