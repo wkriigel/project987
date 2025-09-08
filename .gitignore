@@ -9,3 +9,10 @@ x987-app/x987-data/
 # Node artifacts (if any)
 node_modules/
 
+# Build outputs (do not commit compiled assets)
+x987-web/apps/api/dist/
+x987-web/apps/fe/storybook-static/
+
+# OS cruft & logs
+.DS_Store
+*.log

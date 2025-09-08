@@ -3,7 +3,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { parseCsvToJson } from './utils/csv';
-import { findResultsDir, findConfigPath, findLatestRankingCsv, findGenerationCatalogJson } from './utils/fsPaths';
+import { findResultsDir, findConfigPath, findLatestRankingCsv, findGenerationCatalogJson, resultsDirCandidates } from './utils/fsPaths';
 
 const app = express();
 app.use(cors());
@@ -25,10 +25,27 @@ app.get('/api/ranking/latest', (_req, res) => {
       return res.status(500).json({ error: e?.message || 'read/parse error', file: override })
     }
   }
-  const dir = findResultsDir();
-  if (!dir) return res.status(404).json({ error: 'results directory not found' });
-  const file = findLatestRankingCsv(dir);
-  if (!file) return res.status(404).json({ error: 'no ranking CSV found', searched: dir });
+  let dir = findResultsDir();
+  let file: string | null = dir ? findLatestRankingCsv(dir) : null;
+  if (!file) {
+    // Fallback: scan all candidates and pick the first dir that has a CSV
+    const candidates = resultsDirCandidates();
+    for (const d of candidates) {
+      try {
+        if (fs.existsSync(d)) {
+          const f = findLatestRankingCsv(d);
+          if (f) { dir = d; file = f; break; }
+        }
+      } catch {}
+    }
+  }
+  if (!file || !dir) {
+    return res.status(404).json({
+      error: 'no ranking CSV found',
+      searched: resultsDirCandidates(),
+      hint: 'Run the Python pipeline to generate ranking_main_*.csv or transformed_data_*.csv, or adjust pipeline.output_directory.'
+    });
+  }
   try {
     console.log('[x987-api] Results dir:', dir);
     console.log('[x987-api] Using file:', file);
