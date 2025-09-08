@@ -43,17 +43,13 @@ class CatalogStep(BasePipelineStep):
             from x987.config.manager import get_config_dir
             repo_root = get_config_dir().parent
 
-            # Primary: FE API data path
-            fe_api_path = repo_root / 'x987-web' / 'apps' / 'api' / 'data' / 'generation_catalog.json'
-            out1 = export_generation_catalog_json(fe_api_path)
-
-            # Secondary: x987-data metadata path (for other consumers)
+            # Canonical: x987-data metadata path (single source of truth)
             data_meta_path = repo_root / 'x987-data' / 'metadata' / 'generation_catalog.json'
-            out2 = export_generation_catalog_json(data_meta_path)
+            out = export_generation_catalog_json(data_meta_path)
 
             return {
                 "ok": True,
-                "paths": [str(out1), str(out2)],
+                "paths": [str(out)],
                 "catalog_type": "generations"
             }
         except Exception as e:

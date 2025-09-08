@@ -8,6 +8,7 @@ Each option file is completely self-contained and can be modified independently.
 import os
 import importlib
 from typing import List, Dict, Any
+from x987.utils.log import get_logger
 
 
 class OptionsRegistry:
@@ -25,6 +26,8 @@ class OptionsRegistry:
         # Find all Python files (excluding __init__.py, base.py, detector.py, registry.py)
         excluded_files = {'__init__.py', 'base.py', 'detector.py', 'registry.py'}
         
+        logger = get_logger("options.registry")
+
         for filename in os.listdir(current_dir):
             if filename.endswith('.py') and filename not in excluded_files:
                 # Extract module name (remove .py extension)
@@ -44,14 +47,23 @@ class OptionsRegistry:
                                hasattr(option_instance, 'get_value') and \
                                hasattr(option_instance, 'get_display') and \
                                hasattr(option_instance, 'get_category'):
-                                
                                 self.all_options.append(option_instance)
-                                print(f"✓ Discovered option: {option_instance.get_display()}")
+                                # Keep logs concise by default; surface details at DEBUG level only
+                                try:
+                                    logger.debug(f"Discovered option: {option_instance.get_display()}")
+                                except Exception:
+                                    pass
                 
                 except Exception as e:
-                    print(f"⚠ Warning: Could not load option from {filename}: {e}")
-        
-        print(f"\n📋 Total options discovered: {len(self.all_options)}")
+                    try:
+                        logger.debug(f"Could not load option from {filename}: {e}")
+                    except Exception:
+                        pass
+        # Summary at DEBUG to avoid polluting pipeline output
+        try:
+            logger.debug(f"Total options discovered: {len(self.all_options)}")
+        except Exception:
+            pass
     
     def get_all_options(self):
         """Get all discovered options"""
@@ -72,14 +84,15 @@ class OptionsRegistry:
         """Get total number of available options"""
         return len(self.all_options)
     
-    def list_all_options(self):
+def list_all_options(self):
         """List all discovered options with their details"""
         print("\n📋 All Discovered Options:")
         print("=" * 60)
-        
         for i, option in enumerate(self.all_options, 1):
-            print(f"{i:2d}. {option.get_display():<35} [${option.get_value('test'):>4,}] ({option.get_category()})")
-        
+            try:
+                print(f"{i:2d}. {option.get_display():<35} [${option.get_value('test'):>4,}] ({option.get_category()})")
+            except Exception:
+                print(f"{i:2d}. {option.get_display():<35} ({option.get_category()})")
         print("=" * 60)
         print(f"Total: {len(self.all_options)} options")
 
