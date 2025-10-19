@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented } from 'antd'
+import type { MouseEvent } from 'react'
+import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented, Button, Tooltip } from 'antd'
+import { CopyOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import type { ColumnsType } from 'antd/es/table'
 import type { RankingRecord, RankingResponse } from './lib/types'
@@ -30,7 +32,9 @@ export function App() {
   const optionFacets = useMemo(() => facetCounts(data), [data])
   const exteriorFacets = useMemo(() => paintFacetCounts('exterior', data), [data])
   const interiorFacets = useMemo(() => paintFacetCounts('interior', data), [data])
-  const [generation, setGeneration] = useState<GenerationValue>('all')
+  const [generation, setGeneration] = useState<GenerationValue>('bx-987.2')
+  const [newCount, setNewCount] = useState<number>(0)
+  const [recentCount, setRecentCount] = useState<number>(0)
   const [genCatalog, setGenCatalog] = useState<any | null>(null)
   const [genCatalogStatus, setGenCatalogStatus] = useState<'idle'|'loading'|'ready'|'defaults'|'error'>('idle')
 
@@ -41,8 +45,20 @@ export function App() {
         setLoading(true)
         const res = await axios.get<RankingResponse>('/api/ranking/latest')
         if (!mounted) return
-        setData(res.data.data)
+        const rows = res.data.data
+        setData(rows)
         setFilename(res.data.filename)
+        // Compute new counts for summary
+        try {
+          const now = Date.now()
+          const twoDaysMs = 2 * 24 * 60 * 60 * 1000
+          const isNew = (v: any) => String(v).toLowerCase() === 'true' || String(v) === '1'
+          const firstSeenIsRecent = (ts: any) => {
+            try { return (now - new Date(String(ts)).getTime()) <= twoDaysMs } catch { return false }
+          }
+          setNewCount(rows.filter((r: any) => isNew(r.is_new)).length)
+          setRecentCount(rows.filter((r: any) => firstSeenIsRecent(r.first_seen_at)).length)
+        } catch {}
       } catch (e: any) {
         const serverMsg = e?.response?.data?.error
         setError(serverMsg || e?.message || 'Failed to load')
@@ -140,6 +156,20 @@ export function App() {
   }, [])
 
   const columns: ColumnsType<RankingRecord> = useMemo(() => [
+    {
+      title: 'New',
+      key: 'new',
+      width: 70,
+      render: (_, r) => {
+        try {
+          const firstSeen = r.first_seen_at ? new Date(String(r.first_seen_at)).getTime() : NaN
+          const recent = isFinite(firstSeen) ? (Date.now() - firstSeen) <= (2 * 24 * 60 * 60 * 1000) : false
+          const isNewRun = String(r.is_new).toLowerCase() === 'true' || String(r.is_new) === '1'
+          const show = isNewRun || recent
+          return show ? <Chip text="NEW" /> : null
+        } catch { return null }
+      }
+    },
     {
       title: 'Year',
       key: 'year',
@@ -529,6 +559,42 @@ export function App() {
       }
     },
     {
+      title: 'VIN',
+      key: 'vin',
+      width: 64,
+      align: 'center',
+      render: (_: any, r: any) => {
+        const vin = String(r?.vin || r?.VIN || '').trim()
+        if (!vin) return ''
+        const onCopy = (e: MouseEvent) => {
+          try { e.stopPropagation() } catch {}
+          if (navigator?.clipboard?.writeText) {
+            navigator.clipboard.writeText(vin).catch(() => {})
+          } else {
+            try {
+              const ta = document.createElement('textarea')
+              ta.value = vin
+              document.body.appendChild(ta)
+              ta.select()
+              document.execCommand('copy')
+              document.body.removeChild(ta)
+            } catch {}
+          }
+        }
+        return (
+          <Tooltip title="Copy VIN">
+            <Button
+              type="text"
+              size="small"
+              icon={<CopyOutlined />}
+              aria-label="Copy VIN"
+              onClick={onCopy}
+            />
+          </Tooltip>
+        )
+      }
+    },
+    {
       title: 'Source',
       key: 'src',
       render: (_, r) => {
@@ -547,6 +613,16 @@ export function App() {
     return { displayedCount: displayed.length, unknown }
   }, [data, filtered])
 
+  // Fallback: if selected generation has no matches, revert to 'all'
+  useEffect(() => {
+    try {
+      const displayedCount = filtered.filter(r => toInt(r.year) != null).length
+      if (generation !== 'all' && displayedCount === 0) {
+        setGeneration('all')
+      }
+    } catch { /* ignore */ }
+  }, [generation, filtered])
+
   const [page, setPage] = useState<{ current: number; pageSize: number }>({ current: 1, pageSize: 20 })
 
   const items = [
@@ -558,6 +634,8 @@ export function App() {
           <Space direction="vertical" size="middle" className="w-full">
             <SummaryHeader
               displayedCount={summary.displayedCount}
+              newCount={newCount}
+              recentCount={recentCount}
               filename={filename}
               unknownLinks={summary.unknown.map(r => (r.listing_url || r.source_url || "")).filter(Boolean)}
             />
@@ -633,6 +711,7 @@ export function App() {
               <Table
                 size="small"
                 rowKey={(r) => (
+                  (r as any).vin || (r as any).VIN ||
                   r.listing_url ||
                   r.source_url ||
                   `${toInt(r.year) || 0}-${normalizeModelTrim(((r.model || '') + ' ' + (r.trim || '')).trim()) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`

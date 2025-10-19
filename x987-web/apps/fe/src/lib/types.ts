@@ -3,6 +3,7 @@ export interface RankingRecord {
   year?: string
   model?: string
   trim?: string
+  vin?: string
   asking_price_usd?: string
   mileage?: string
   total_options_msrp?: string
@@ -12,6 +13,9 @@ export interface RankingRecord {
   listing_url?: string
   source_url?: string
   deal_delta_usd?: string
+  // Newness indicators (optional; present if pipeline propagates)
+  is_new?: string | boolean
+  first_seen_at?: string
 }
 
 export interface RankingResponse {
