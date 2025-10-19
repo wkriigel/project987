@@ -56,5 +56,10 @@ export const interiorPaint: Record<string, string> = {
   'navy': '#2F3A56',
   'white': '#E8E8E8',
   'ivory': '#E8E8E8',
-  'alabaster': '#E8E8E8'
+  'alabaster': '#E8E8E8',
+  // Common Porsche interior names not in the generic list
+  'luxor beige': '#D9C7A7',
+  'agate gray': '#9AA3A9',
+  'pebble gray': '#B7BDBF',
+  'amber orange': '#C8732A'
 }

@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>x987 Ingest</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0D1117; color: #C9D1D9; display: grid; place-items: start center; min-height: 100vh; }
+      .card { background: #161B22; border: 1px solid #30363D; padding: 16px 20px; border-radius: 8px; width: min(760px, 94vw); margin: 24px 0; }
+      .muted { color: #8B949E; font-size: 12px; }
+      .err { color: #FF6F11; margin-top: 8px; }
+      .section { margin-top: 12px; }
+      .row { display: grid; grid-template-columns: 160px 1fr; gap: 8px; margin: 4px 0; }
+      .key { color: #8B949E; }
+      pre { background: #0D1117; border: 1px solid #30363D; padding: 8px 10px; border-radius: 6px; overflow: auto; max-height: 320px; }
+      button { background: #21262D; color: #C9D1D9; border: 1px solid #30363D; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+      button:hover { background: #30363D; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div id="status">Processing VIN data…</div>
+      <div class="muted" id="detail"></div>
+      <div class="section" id="summary"></div>
+      <div class="section">
+        <div class="row"><div class="key">Payload JSON</div><div><button id="copyBtn">Copy</button></div></div>
+        <pre id="payload"></pre>
+      </div>
+      <div class="section">
+        <div class="row"><div class="key">Saved Record</div><div class="muted">(from API)</div></div>
+        <pre id="record"></pre>
+      </div>
+      <div class="err" id="err"></div>
+    </div>
+    <script>
+      (async function(){
+        const $ = (id) => document.getElementById(id);
+        function decodeHash(h) {
+          const raw = (h || '').replace(/^#/, '');
+          if (!raw) return '';
+          try { return decodeURIComponent(escape(atob(raw))); } catch {}
+          try { return decodeURIComponent(raw); } catch {}
+          try { return atob(raw); } catch {}
+          return raw;
+        }
+        try {
+          const json = decodeHash(location.hash);
+          if (!json) throw new Error('Missing payload in URL hash');
+          const payload = JSON.parse(json);
+          try { console.log('[x987] ingest payload', payload); } catch {}
+          const vin = String(payload.vin || '').trim().toUpperCase();
+          if (!vin) throw new Error('VIN missing in payload');
+          $('detail').textContent = `VIN ${vin}`;
+          // Render captured fields summary
+          try {
+            const fields = [
+              ['modelTag', payload.modelTag],
+              ['model', payload.model],
+              ['trim', payload.trim],
+              ['baseName', payload.baseName],
+              ['year', payload.year],
+              ['exterior', payload.exterior],
+              ['interior', payload.interior],
+              ['totalMsrp', payload.totalMsrp],
+              ['options.count', Array.isArray(payload.options) ? payload.options.length : 0]
+            ];
+            $('summary').innerHTML = fields.map(([k,v]) => (
+              `<div class="row"><div class="key">${k}</div><div>${(v==null?''+v:v).toString()}</div></div>`
+            )).join('');
+          } catch {}
+          // Show raw payload JSON
+          try { $('payload').textContent = JSON.stringify(payload, null, 2); } catch {}
+          // Copy button for payload
+          try { $('copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(JSON.stringify(payload, null, 2)); alert('Payload copied'); } catch { alert('Copy failed'); } } } catch {}
+          const res = await fetch(`/api/vin/${encodeURIComponent(vin)}/options`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok === false) {
+            throw new Error((data && data.error) || ('HTTP '+res.status));
+          }
+          $('status').textContent = 'Saved.';
+          // Notify other tabs via BroadcastChannel and storage event
+          try {
+            const bc = new BroadcastChannel('x987-vin')
+            bc.postMessage({ type: 'vinSaved', vin, record: data.record || null })
+            bc.close()
+          } catch (e) {}
+          try {
+            localStorage.setItem('x987_vin_saved', JSON.stringify({ ts: Date.now(), vin }))
+          } catch (e) {}
+          // Show saved record JSON
+          try { $('record').textContent = JSON.stringify(data.record || {}, null, 2); } catch {}
+          // Auto-close unless debug is enabled
+          let hold = false;
+          try {
+            const sp = new URLSearchParams(location.search);
+            hold = sp.get('debug') === '1' || localStorage.getItem('x987_ingest_debug') === '1'
+          } catch {}
+          if (!hold) {
+            const tryClose = () => { try { window.close(); } catch {} try { window.open('', '_self')?.close(); } catch {} }
+            tryClose();
+            setTimeout(() => { tryClose(); window.location.href = '/'; }, 400);
+          } else {
+            $('status').textContent = 'Saved. Debug hold is active (x987_ingest_debug=1 or ?debug=1)';
+          }
+        } catch (e) {
+          $('status').textContent = 'Failed to save.';
+          $('err').textContent = String(e && e.message || e);
+        }
+      })();
+    </script>
+  </body>
+</html>
