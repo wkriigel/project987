@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type React from 'react'
 import type { MouseEvent } from 'react'
 import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented, Button, Tooltip } from 'antd'
 import { CopyOutlined } from '@ant-design/icons'
@@ -8,17 +9,19 @@ import type { RankingRecord, RankingResponse } from './lib/types'
 import { priceK, milesK, normalizeModelTrim, shortHost, toInt, optionsCompact } from './lib/format'
 import { isEarlyYearDim, isMilesHighlighted, isModelCellHighlighted, isMsrpHighlighted, isPriceHighlighted } from './lib/highlight'
 import { roles } from './design/tokens/roles'
+import { palette } from './design/tokens/colors'
 import { SummaryHeader } from './components/SummaryHeader'
 import { Chip } from './components/Chip'
 import { ThresholdChip } from './components/ThresholdChip'
 import { thresholdSpecs, toLevelFromSpec } from './design/thresholds'
 import { facetCounts, tagsForRecord } from './lib/options'
 import { PaintChipExterior, PaintChipInterior } from './components/PaintChip'
-import { extractPaintFromRecord } from './design/paint/normalize'
+import { extractPaintFromRecord, parseInteriorTwoTone } from './design/paint/normalize'
 import { FilterSelect } from './components/FilterSelect'
 import { applyGenerationFilter } from './lib/filters'
 import type { GenerationValue } from './lib/filters'
 import { generationOptionsAll } from './lib/generation'
+import { BookmarkletModal } from './components/BookmarkletModal'
 
 const { Header, Content } = Layout
 const { Text, Link } = Typography
@@ -37,6 +40,12 @@ export function App() {
   const [recentCount, setRecentCount] = useState<number>(0)
   const [genCatalog, setGenCatalog] = useState<any | null>(null)
   const [genCatalogStatus, setGenCatalogStatus] = useState<'idle'|'loading'|'ready'|'defaults'|'error'>('idle')
+  const [vinMap, setVinMap] = useState<Record<string, any>>({})
+  const [bmOpen, setBmOpen] = useState(false)
+  // New filters
+  const [body, setBody] = useState<'all'|'Boxster'|'Cayman'>('all')
+  const [maxPrice, setMaxPrice] = useState<number | null>(50000)
+  const [msrpSort, setMsrpSort] = useState<'descend' | undefined>(undefined)
 
   useEffect(() => {
     let mounted = true
@@ -67,6 +76,61 @@ export function App() {
       }
     }
     load()
+    return () => { mounted = false }
+  }, [])
+
+  // Listen for cross-tab save notifications to refresh vinMap and update UI
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null
+    try {
+      bc = new BroadcastChannel('x987-vin')
+      bc.onmessage = (ev: MessageEvent) => {
+        try {
+          const msg = ev.data || {}
+          if (msg && msg.type === 'vinSaved') {
+            const rec = msg.record
+            const v: string = String(msg.vin || rec?.vin || '').trim().toUpperCase()
+            if (v) setVinMap((prev) => ({ ...prev, [v]: rec }))
+          }
+        } catch {}
+      }
+    } catch {}
+    const onStorage = (e: StorageEvent) => {
+      try {
+        if (e.key === 'x987_vin_saved' && e.newValue) {
+          const payload = JSON.parse(e.newValue)
+          const v: string = String(payload?.vin || '').trim().toUpperCase()
+          if (v) {
+            fetch(`/api/vin/${encodeURIComponent(v)}`)
+              .then(res => res.json().catch(() => ({})))
+              .then(json => {
+                if (json && json.ok && json.record) {
+                  setVinMap((prev) => ({ ...prev, [v]: json.record }))
+                }
+              }).catch(() => {})
+          }
+        }
+      } catch {}
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      try { bc && bc.close() } catch {}
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
+  // Load all VIN enriched records for client-side join
+  useEffect(() => {
+    let mounted = true
+    async function loadVin() {
+      try {
+        const res = await fetch('/api/vin')
+        const json = await res.json().catch(() => ({}))
+        if (!mounted) return
+        if (json && json.ok && json.entries) setVinMap(json.entries)
+      } catch { /* ignore */ }
+    }
+    loadVin()
     return () => { mounted = false }
   }, [])
 
@@ -174,7 +238,13 @@ export function App() {
       title: 'Year',
       key: 'year',
       width: 90,
-      sorter: (a,b) => (toInt(a.year)||0) - (toInt(b.year)||0),
+      sorter: (a,b) => {
+        const va = String((a as any).vin || (a as any).VIN || '').trim().toUpperCase()
+        const vb = String((b as any).vin || (b as any).VIN || '').trim().toUpperCase()
+        const ea = va && vinMap[va] ? toInt(vinMap[va]?.parsed?.year) : toInt((a as any).year)
+        const eb = vb && vinMap[vb] ? toInt(vinMap[vb]?.parsed?.year) : toInt((b as any).year)
+        return (ea || 0) - (eb || 0)
+      },
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
         const curr = (() => { try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} } })() as { min?: number; max?: number }
         return (
@@ -199,14 +269,18 @@ export function App() {
       onFilter: (value, rec) => {
         let range: { min?: number; max?: number } = {}
         try { range = JSON.parse(String(value)) } catch {}
-        const v = toInt(rec.year)
+        const vin = String((rec as any).vin || (rec as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const v = enriched?.parsed?.year != null ? toInt(enriched.parsed.year) : toInt((rec as any).year)
         if (v == null) return false
         if (range.min != null && v < range.min) return false
         if (range.max != null && v > range.max) return false
         return true
       },
       render: (_, r) => {
-        const y = toInt(r.year)
+        const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const y = enriched?.parsed?.year != null ? toInt(enriched.parsed.year) : toInt((r as any).year)
         const dimYear = isEarlyYearDim(r)
         return <Chip text={y ?? ''} dim={dimYear} />
       }
@@ -214,11 +288,13 @@ export function App() {
     {
       title: 'Model/Trim',
       key: 'modeltrim',
-      sorter: (a,b) => (
-        normalizeModelTrim(((a.model || '') + ' ' + (a.trim || '')).trim()) || ''
-      ).localeCompare(
-        normalizeModelTrim(((b.model || '') + ' ' + (b.trim || '')).trim()) || ''
-      ),
+      sorter: (a,b) => {
+        const va = String((a as any).vin || (a as any).VIN || '').trim().toUpperCase()
+        const vb = String((b as any).vin || (b as any).VIN || '').trim().toUpperCase()
+        const la = computeModelTrimLabel(a as any, va && vinMap[va] ? vinMap[va] : null)
+        const lb = computeModelTrimLabel(b as any, vb && vinMap[vb] ? vinMap[vb] : null)
+        return la.localeCompare(lb)
+      },
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
         <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
           <Input
@@ -234,14 +310,33 @@ export function App() {
       ),
       filterIcon: (filtered: boolean) => (<span style={{ color: filtered ? '#1677ff' : undefined }}>🔎</span>),
       onFilter: (value, rec) => {
-        const mt = normalizeModelTrim(((rec.model || '') + ' ' + (rec.trim || '')).trim())
+        const vin = String((rec as any).vin || (rec as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const mt = computeModelTrimLabel(rec as any, enriched)
         const s = (mt || '').toLowerCase()
         return s.includes(String(value).toLowerCase())
       },
       onFilterDropdownOpenChange: (open) => { if (open) setTimeout(() => ymtInputRef.current?.select(), 100) },
       render: (_, r) => {
-        const mt = normalizeModelTrim(((r.model || '') + ' ' + (r.trim || '')).trim())
-        return <span className="text-xs md:text-sm">{mt}</span>
+        const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const mt = computeModelTrimLabel(r as any, enriched)
+        const usingVA = Boolean(String(enriched?.parsed?.model || '').trim())
+        const showSource = (() => {
+          try {
+            const sp = new URLSearchParams(location.search)
+            if (sp.get('debug_src') === '1') return true
+            return localStorage.getItem('x987_debug_src') === '1'
+          } catch { return false }
+        })()
+        return (
+          <span className="text-xs md:text-sm">
+            {mt}
+            {showSource ? (
+              <span style={{ marginLeft: 6, opacity: 0.6 }}>({usingVA ? 'VA' : 'PIPE'})</span>
+            ) : null}
+          </span>
+        )
       }
     },
     {
@@ -356,8 +451,15 @@ export function App() {
       title: 'Opt $',
       key: 'msrp',
       align: 'right',
-      sorter: (a,b) => (toInt(a.total_options_msrp)||0) - (toInt(b.total_options_msrp)||0),
+      sorter: (a,b) => {
+        const va = String((a as any).vin || (a as any).VIN || '').trim().toUpperCase()
+        const vb = String((b as any).vin || (b as any).VIN || '').trim().toUpperCase()
+        const ea = va && vinMap[va] ? toInt(vinMap[va]?.parsed?.totalMsrp) : toInt((a as any).total_options_msrp)
+        const eb = vb && vinMap[vb] ? toInt(vinMap[vb]?.parsed?.totalMsrp) : toInt((b as any).total_options_msrp)
+        return (ea || 0) - (eb || 0)
+      },
       defaultSortOrder: 'descend',
+      sortOrder: msrpSort,
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
         const curr = (() => {
           try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} }
@@ -394,14 +496,22 @@ export function App() {
       onFilter: (value, rec) => {
         let range: { min?: number; max?: number } = {}
         try { range = JSON.parse(String(value)) } catch {}
-        const v = toInt(rec.total_options_msrp)
+        const v = (() => {
+          try {
+            const vin = String((rec as any).vin || (rec as any).VIN || '').trim().toUpperCase()
+            const enriched = vin ? vinMap[vin] : null
+            return enriched?.parsed?.totalMsrp != null ? toInt(enriched.parsed.totalMsrp) : toInt((rec as any).total_options_msrp)
+          } catch { return toInt((rec as any).total_options_msrp) }
+        })()
         if (v == null) return false
         if (range.min != null && v < range.min) return false
         if (range.max != null && v > range.max) return false
         return true
       },
       render: (_, r) => {
-        const msrp = toInt(r.total_options_msrp)
+        const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const msrp = enriched?.parsed?.totalMsrp != null ? toInt(enriched.parsed.totalMsrp) : toInt(r.total_options_msrp)
         const text = msrp != null ? priceK(msrp) : ''
         const level = toLevelFromSpec(msrp, thresholdSpecs.msrp)
         return <ThresholdChip color="green" level={level} text={text} size="full" />
@@ -457,11 +567,21 @@ export function App() {
         const chosen = payload.tags || []
         const mode = payload.mode || 'and'
         if (chosen.length === 0) return true
-        const tags = tagsForRecord(rec)
+        const vin = String((rec as any).vin || (rec as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const tags = enriched ? new Set<string>(Array.isArray(enriched?.derived?.normalizedOptions) ? enriched.derived.normalizedOptions : []) : tagsForRecord(rec)
         if (mode === 'and') return chosen.every(t => tags.has(t))
         return chosen.some(t => tags.has(t))
       },
       render: (_, r) => {
+        const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        if (enriched) {
+          const node = renderEnrichedOptions(enriched)
+          return enriched?.link ? (
+            <a href={enriched.link} target="_blank" rel="noreferrer">{node || '(no options)'}</a>
+          ) : (node || '(no options)')
+        }
         const txt = optionsCompact(r.options_list)
         return txt || '(no options detected)'
       }
@@ -499,13 +619,14 @@ export function App() {
         return chosen.includes(key)
       },
       render: (_, r) => {
-        const exInfo = extractPaintFromRecord('exterior', r)
-        const exName = (exInfo.name as any) || ''
+        const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const exName = String(enriched?.parsed?.exterior || '') || (extractPaintFromRecord('exterior', r).name as any) || ''
         return (
           <PaintChipExterior
             name={exName}
-            hex={exInfo.hex}
-            label={exName || exInfo.hex || '—'}
+            hex={undefined}
+            label={exName || '—'}
             size="md"
             className="w-full min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
           />
@@ -545,13 +666,17 @@ export function App() {
         return chosen.includes(key)
       },
       render: (_, r) => {
-        const inInfo = extractPaintFromRecord('interior', r)
-        const inName = (inInfo.name as any) || ''
+        const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const rawIn = String(enriched?.parsed?.interior || '') || (extractPaintFromRecord('interior', r).name as any) || ''
+        const two = parseInteriorTwoTone(rawIn)
+        const displayLabel = titleCase(two.label || rawIn)
+        const chipName = (two.secondary || two.primary || '').toString()
         return (
           <PaintChipInterior
-            name={inName}
-            hex={inInfo.hex}
-            label={inName || inInfo.hex || '—'}
+            name={chipName}
+            hex={undefined}
+            label={displayLabel || '—'}
             size="md"
             className="w-full min-w-0 overflow-hidden whitespace-nowrap text-ellipsis"
           />
@@ -566,29 +691,19 @@ export function App() {
       render: (_: any, r: any) => {
         const vin = String(r?.vin || r?.VIN || '').trim()
         if (!vin) return ''
-        const onCopy = (e: MouseEvent) => {
+        const onOpenVa = (e: MouseEvent) => {
           try { e.stopPropagation() } catch {}
-          if (navigator?.clipboard?.writeText) {
-            navigator.clipboard.writeText(vin).catch(() => {})
-          } else {
-            try {
-              const ta = document.createElement('textarea')
-              ta.value = vin
-              document.body.appendChild(ta)
-              ta.select()
-              document.execCommand('copy')
-              document.body.removeChild(ta)
-            } catch {}
-          }
+          const url = `https://vinanalytics.com/car/${encodeURIComponent(vin.toUpperCase())}/`
+          try { window.open(url, '_blank', 'noopener') } catch { window.location.href = url }
         }
         return (
-          <Tooltip title="Copy VIN">
+          <Tooltip title="Open VINAnalytics">
             <Button
               type="text"
               size="small"
               icon={<CopyOutlined />}
-              aria-label="Copy VIN"
-              onClick={onCopy}
+              aria-label="Open VINAnalytics"
+              onClick={onOpenVa}
             />
           </Tooltip>
         )
@@ -603,9 +718,32 @@ export function App() {
         return url ? <a href={url} target="_blank" rel="noreferrer">{host}</a> : ''
       }
     }
-  ], [optionFacets])
+  ], [optionFacets, vinMap, msrpSort])
 
-  const filtered = useMemo(() => applyGenerationFilter(data, generation), [data, generation])
+  const filtered = useMemo(() => {
+    // Apply generation filter first
+    let rows = applyGenerationFilter(data, generation)
+    // Apply body filter (Cab/Coupe): All / Boxster / Cayman
+    if (body !== 'all') {
+      const target = body.toLowerCase()
+      rows = rows.filter((r: any) => {
+        try {
+          const vin = String(r?.vin || r?.VIN || '').trim().toUpperCase()
+          const enriched = vin ? vinMap[vin] : null
+          const mt = computeModelTrimLabel(r, enriched)
+          return (mt || '').toLowerCase().startsWith(target)
+        } catch { return false }
+      })
+    }
+    // Apply max price filter (asking_price_usd)
+    if (maxPrice != null) {
+      rows = rows.filter((r: any) => {
+        const p = toInt((r as any).asking_price_usd)
+        return p != null && p <= maxPrice
+      })
+    }
+    return rows
+  }, [data, generation, body, maxPrice, vinMap])
   const genOptions = useMemo(() => generationOptionsAll(data), [data])
   const summary = useMemo(() => {
     const displayed = filtered.filter(r => toInt(r.year) != null)
@@ -624,6 +762,40 @@ export function App() {
   }, [generation, filtered])
 
   const [page, setPage] = useState<{ current: number; pageSize: number }>({ current: 1, pageSize: 20 })
+
+  // Debug logging: enable via ?debug_rows=1 or localStorage.x987_debug_rows='1'
+  useEffect(() => {
+    const isDebug = (() => {
+      try {
+        const sp = new URLSearchParams(location.search)
+        if (sp.get('debug_rows') === '1') return true
+        return localStorage.getItem('x987_debug_rows') === '1'
+      } catch { return false }
+    })()
+    if (!isDebug) return
+    try {
+      const rows: any[] = (filtered && filtered.length ? filtered : data) as any[]
+      console.groupCollapsed(`[x987-debug] Rows ${rows.length}`)
+      rows.forEach((r: any) => {
+        const vin = String(r?.vin || r?.VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const pipModel = String(r?.model || '')
+        const pipTrim = String(r?.trim || '')
+        const vaModel = String(enriched?.parsed?.model || '')
+        const vaTrim = String(enriched?.parsed?.trim || '')
+        const modelTag = String(enriched?.parsed?.modelTag || '')
+        const baseName = String(enriched?.parsed?.baseName || '')
+        const chosen = computeModelTrimLabel(r, enriched)
+        const source = vaModel ? 'vinanalytics' : 'pipeline'
+        console.log('[row]', vin || '(no VIN)', {
+          pipeline: { model: pipModel, trim: pipTrim },
+          vinanalytics: { model: vaModel, trim: vaTrim, modelTag, baseName },
+          chosen: { label: chosen, source }
+        })
+      })
+      console.groupEnd()
+    } catch { /* ignore */ }
+  }, [data, filtered, vinMap])
 
   const items = [
     {
@@ -649,6 +821,33 @@ export function App() {
                 className="w-full sm:w-[420px] md:w-[560px]"
                 options={genOptions}
               />
+              <FilterSelect
+                label="Cab/Coupe"
+                value={body}
+                onChange={(v) => setBody(String(v) as any)}
+                className="w-full sm:w-[220px]"
+                options={[
+                  { label: 'All', value: 'all' },
+                  { label: 'Boxster', value: 'Boxster' },
+                  { label: 'Cayman', value: 'Cayman' }
+                ]}
+              />
+              <FilterSelect
+                label="Max Price"
+                value={maxPrice == null ? 'none' : maxPrice}
+                onChange={(v) => {
+                  if (String(v) === 'none') setMaxPrice(null)
+                  else setMaxPrice(Number(v) || null)
+                }}
+                className="w-full sm:w-[220px]"
+                options={[
+                  { label: 'None', value: 'none' },
+                  ...Array.from({ length: 10 }, (_, i) => (i + 1) * 10000).map(v => ({ label: `$${(v/1000)}k`, value: v }))
+                ]}
+              />
+              <Button onClick={() => setMsrpSort('descend')}>
+                MSRP High → Low
+              </Button>
             </div>
 
             {/* Minimal, plain-text generation metadata display */}
@@ -718,8 +917,22 @@ export function App() {
                 )}
                 columns={columns}
                 dataSource={filtered.filter(r => toInt(r.year) != null)}
+                rowClassName={(r) => {
+                  try {
+                    const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+                    return vin && vinMap[vin] ? 'row-enriched' : ''
+                  } catch { return '' }
+                }}
                 pagination={{ current: page.current, pageSize: page.pageSize }}
-                onChange={(pag) => setPage({ current: pag?.current ?? 1, pageSize: pag?.pageSize ?? 20 })}
+                onChange={(pag, _filters, sorter: any) => {
+                  setPage({ current: pag?.current ?? 1, pageSize: pag?.pageSize ?? 20 })
+                  try {
+                    const k = Array.isArray(sorter) ? sorter[0]?.columnKey : sorter?.columnKey
+                    const order = Array.isArray(sorter) ? sorter[0]?.order : sorter?.order
+                    if (k === 'msrp') setMsrpSort(order || undefined)
+                    else setMsrpSort(undefined)
+                  } catch {}
+                }}
               />
             )}
           </Space>
@@ -807,11 +1020,17 @@ export function App() {
       }}
     >
       <Layout style={{ minHeight: '100vh', background: roles.bg.page as string }}>
-        <Header style={{ color: roles.text.primary as string, fontWeight: 600, background: roles.bg.surfaceAlt as string }}>x987 Web</Header>
+        <Header style={{ color: roles.text.primary as string, fontWeight: 600, background: roles.bg.surfaceAlt as string, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>x987 Web</div>
+          <div>
+            <Button size="small" onClick={() => setBmOpen(true)}>Bookmarklet</Button>
+          </div>
+        </Header>
         <Content style={{ background: roles.bg.surface as string }}>
           <Tabs items={items} />
         </Content>
       </Layout>
+      <BookmarkletModal open={bmOpen} onClose={() => setBmOpen(false)} />
     </ConfigProvider>
   )
 }
@@ -831,4 +1050,59 @@ function paintFacetCounts(kind: 'exterior'|'interior', data: any[]) {
 
 function titleCase(s: string) {
   return (s || '').split(/\s+/).map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ')
+}
+
+function computeModelTrimLabel(rec: any, enriched: any | null): string {
+  try {
+    // Simplified: only use enriched v-model (parsed.model/trim). Otherwise, fall back to scraped.
+    const model = String(enriched?.parsed?.model || '').trim()
+    const trim = String(enriched?.parsed?.trim || '').trim()
+    if (model) return normalizeModelTrim(`${model} ${trim}`.trim())
+    return normalizeModelTrim(`${String(rec?.model || '')} ${String(rec?.trim || '')}`.trim())
+  } catch { return normalizeModelTrim(String(rec?.model || '')) }
+}
+
+function isGenericTrim(v: any): boolean {
+  const s = String(v || '').trim().toLowerCase()
+  if (!s) return true
+  return s === 'base' || s === 'standard' || s === 'std'
+}
+
+// (unused legacy helpers removed)
+
+function renderEnrichedOptions(enriched: any): React.ReactNode {
+  try {
+    const derived: string[] = Array.isArray(enriched?.derived?.normalizedOptions) ? enriched.derived.normalizedOptions : []
+    const opts: any[] = Array.isArray(enriched?.parsed?.options) ? enriched.parsed.options : []
+    const names = opts.map(o => String(o?.name || o?.code || '')).filter(Boolean)
+    // Preferred order and key chip set
+    const priority = ['Chrono', 'LSD', 'PASM', 'PTV', 'PSE']
+    const normalized = [...new Set(derived.length ? derived : names)].map(s => {
+      const sl = s.toLowerCase()
+      if (sl.includes('exhaust')) return 'PSE'
+      return s
+    })
+    const keySet = new Set(priority)
+    const chips = priority
+      .filter(k => normalized.some(s => s.toLowerCase().includes(k.toLowerCase())))
+      .map(k => {
+        // Make 'Chrono' a bit brighter than other option chips
+        const isChrono = k.toLowerCase() === 'chrono'
+        const bg = isChrono ? (palette.gray[500] as string) : (roles.bg.emphasis as string)
+        return <Chip key={k} text={k} bg={bg} color={roles.text.primary as string} />
+      })
+    // Packages (exclude Chrono packages)
+    const packages = opts
+      .filter(o => (/package/i.test(String(o?.name || '')) || /^[P][A-Z0-9]{1,3}$/i.test(String(o?.code || ''))))
+      .filter(o => !/chrono/i.test(String(o?.name || '')) && !/^64(0|0A|0LC|0SP)?$/i.test(String(o?.code || '')) && String(o?.code || '').toUpperCase() !== '639')
+      .map(o => String(o?.name || o?.code || ''))
+      .filter(Boolean)
+    const extrasText = packages.length ? optionsCompact(packages) : ''
+    return (
+      <span className="inline-flex items-center gap-1 flex-wrap">
+        {chips}
+        {extrasText ? <span style={{ marginLeft: chips.length ? 6 : 0 }}>{extrasText}</span> : null}
+      </span>
+    )
+  } catch { return '' }
 }

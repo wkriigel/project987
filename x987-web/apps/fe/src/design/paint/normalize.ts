@@ -43,10 +43,80 @@ export function normalizeExteriorName(name?: string): string {
 export function normalizeInteriorName(name?: string): string {
   let n = trim(name)
   if (!n) return ''
-  // map phrases to canonical tokens
+  // standardize spellings
+  n = n.replace(/grey/g, 'gray')
+  // normalize common phrases
   n = n.replace(/sand\s*beige/g, 'sand beige')
   n = n.replace(/platinum\s*grey/g, 'platinum gray')
+  n = n.replace(/platinum\s*gray/g, 'platinum gray')
+  n = n.replace(/luxor\s*beige/g, 'luxor beige')
+  n = n.replace(/agate\s*gray/g, 'agate gray')
+  n = n.replace(/pebble\s*gray/g, 'pebble gray')
+  n = n.replace(/amber\s*orange/g, 'amber orange')
   return n
+}
+
+// Reduce verbose interior descriptions to a canonical color label
+export function simplifyInteriorColorLabel(name?: string): string {
+  let s = trim(name)
+  if (!s) return ''
+  s = s.toLowerCase()
+  s = s.replace(/grey/g, 'gray')
+  // Prefer first part before '/' when two-tone is listed
+  if (s.includes('/')) s = s.split('/')[0]
+  // Drop common non-color tokens
+  const drop = [
+    'partial','standard','leather','lthr','lth','natural','package','int','interior','sports','sport','seats','seat','stitch','stitching','contrast','contrasting','with','w','and','in'
+  ]
+  for (const w of drop) s = s.replace(new RegExp(`\\b${w}\\b`, 'g'), ' ')
+  s = s.replace(/\s+/g, ' ').trim()
+  // Expand standalone roots to canonical names
+  const roots: Record<string, string> = {
+    'agate': 'agate gray',
+    'pebble': 'pebble gray',
+    'platinum': 'platinum gray',
+    'amber': 'amber orange'
+  }
+  if (roots[s]) s = roots[s]
+  // Known multi-word priorities first
+  const known = [
+    'luxor beige','sand beige','agate gray','pebble gray','platinum gray','amber orange',
+    'espresso','cocoa','camel','savanna','tan','brown','stone',
+    'black','gray','beige','red','blue','white','ivory','alabaster'
+  ]
+  const n = normalizeInteriorName(s)
+  for (const k of known) {
+    const re = new RegExp(`(^|[^a-z])${k}([^a-z]|$)`, 'i')
+    if (re.test(n)) return k
+  }
+  // Fallback: if string ends with a basic hue, prefer that
+  const basic = ['black','gray','beige','brown','tan','red','blue','white']
+  for (const b of basic) {
+    if (new RegExp(`\\b${b}\\b`, 'i').test(n)) return b
+  }
+  return n
+}
+
+export function parseInteriorTwoTone(name?: string): { primary: string; secondary?: string; label: string } {
+  const raw = (name || '').trim()
+  if (!raw) return { primary: '', label: '' }
+  let s = raw
+  // Normalize separators
+  s = s.replace(/[\u2013\u2014]/g, '-')
+  // If explicit two-tone separator exists, split; else treat as single
+  let left = s
+  let right: string | undefined
+  const slashIdx = s.indexOf('/')
+  if (slashIdx >= 0) {
+    left = s.slice(0, slashIdx)
+    right = s.slice(slashIdx + 1)
+  }
+  const p = simplifyInteriorColorLabel(left)
+  const s2 = right ? simplifyInteriorColorLabel(right) : ''
+  const primary = p || normalizeInteriorName(left) || left
+  const secondary = s2 || undefined
+  const label = secondary ? `${primary} / ${secondary}` : primary
+  return { primary, secondary, label }
 }
 
 export function toPaintHex(kind: 'exterior'|'interior', name?: string): string | null {
