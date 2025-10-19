@@ -132,9 +132,21 @@ class TransformationStep(BasePipelineStep):
                 extracted_data = {
                     'source_url': listing.get('source_url', ''),
                     'listing_url': listing.get('listing_url', ''),
+                    # Carry-through identity + seen flags for CSV + FE
+                    'canonical_url': listing.get('canonical_url', ''),
+                    'is_new': listing.get('is_new', False),
+                    'first_seen_at': listing.get('first_seen_at', ''),
                     'raw_text': listing.get('raw_text', ''),
                     'extraction_timestamp': datetime.now().isoformat()
                 }
+                # VIN: try to extract from aggregated text early so it flows through
+                try:
+                    from ...utils.extractors import extract_vin_unified
+                    vin_value = extract_vin_unified(_raw_text)
+                    if vin_value:
+                        extracted_data['vin'] = vin_value
+                except Exception:
+                    pass
                 
                 # Extract year
                 year_value = extractor.extract_year(_raw_text)
@@ -371,6 +383,11 @@ class TransformationStep(BasePipelineStep):
                     'listing_id': i + 1,
                     'source_url': properties.get('source_url', ''),
                     'listing_url': properties.get('listing_url', ''),
+                    'canonical_url': properties.get('canonical_url', ''),
+                    # VIN flows through to dedupe/ranking so FE can copy it
+                    'vin': properties.get('vin', ''),
+                    'is_new': properties.get('is_new', ''),
+                    'first_seen_at': properties.get('first_seen_at', ''),
                     'extraction_timestamp': properties.get('extraction_timestamp', ''),
                     'detection_timestamp': options.get('detection_timestamp', ''),
                     'data_quality_score': properties.get('data_quality_score', 0),
