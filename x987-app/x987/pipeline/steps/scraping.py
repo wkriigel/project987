@@ -148,6 +148,8 @@ class ScrapingStep(BasePipelineStep):
                 # Step 2: Scrape data
                 print("🕷️  Step 2: Scraping data from URLs...")
                 kwargs_without_headful = {k: v for k, v in kwargs.items() if k != 'headful'}
+                # Pass config through so concurrent path can use DB cache/enrichment
+                kwargs_without_headful['config'] = config
                 if max(1, int(scraping_config.get('concurrency', 1))) > 1:
                     scraped_data = self._scrape_urls_concurrent(prepared_urls, scraping_config, headful, **kwargs_without_headful)
                 else:
@@ -303,12 +305,16 @@ class ScrapingStep(BasePipelineStep):
                     except Exception:
                         url_vin_map = {}
                     try:
-                        vin_path = Path('x987-data/metadata/vin_enriched.json')
-                        if vin_path.exists():
-                            raw = json.loads(vin_path.read_text(encoding='utf-8'))
-                            vin_store = raw.get('entries') if isinstance(raw, dict) and 'entries' in raw else raw
-                            if not isinstance(vin_store, dict):
-                                vin_store = {}
+                        # Prefer DB-backed VIN enrichment; fall back to JSON file
+                        if db_conn is not None:
+                            vin_store = {}
+                        else:
+                            vin_path = Path('x987-data/metadata/vin_enriched.json')
+                            if vin_path.exists():
+                                raw = json.loads(vin_path.read_text(encoding='utf-8'))
+                                vin_store = raw.get('entries') if isinstance(raw, dict) and 'entries' in raw else raw
+                                if not isinstance(vin_store, dict):
+                                    vin_store = {}
                     except Exception:
                         vin_store = {}
 
@@ -326,13 +332,27 @@ class ScrapingStep(BasePipelineStep):
                         canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
                         if skip_if_enriched and canonical in url_vin_map:
                             vin = str(url_vin_map.get(canonical) or '').strip().upper()
-                            enr = vin_store.get(vin) if vin else None
+                            enr = None
+                            if vin and db_conn is not None:
+                                try:
+                                    row = db_conn.execute(
+                                        "SELECT parsed_json, derived_json FROM vin_enriched WHERE vin = ?",
+                                        (vin,),
+                                    ).fetchone()
+                                    if row:
+                                        parsed_json = json.loads(row[0]) if row[0] else {}
+                                        derived_json = json.loads(row[1]) if row[1] else {}
+                                        enr = {"parsed": parsed_json, "derived": derived_json}
+                                except Exception:
+                                    enr = None
+                            if enr is None and vin:
+                                enr = vin_store.get(vin) if isinstance(vin_store, dict) else None
                             if enr:
                                 # Produce a synthetic result using enriched data and current search price/mileage
                                 enriched_payload = {
                                     'vin': vin,
-                                    'parsed': enr.get('parsed', {}),
-                                    'derived': enr.get('derived', {})
+                                    'parsed': enr.get('parsed', enr.get('parsed_json', {})) if isinstance(enr, dict) else {},
+                                    'derived': enr.get('derived', enr.get('derived_json', {})) if isinstance(enr, dict) else {},
                                 }
                                 scraped_result = {
                                     'scraping_id': url_data.get('scraping_id'),
@@ -587,6 +607,7 @@ class ScrapingStep(BasePipelineStep):
                     except Exception:
                         url_vin_map = {}
                     try:
+                        # In async path we don't share DB conn; rely on JSON fallback for now
                         vin_path = Path('x987-data/metadata/vin_enriched.json')
                         if vin_path.exists():
                             raw = json.loads(vin_path.read_text(encoding='utf-8'))
@@ -628,7 +649,22 @@ class ScrapingStep(BasePipelineStep):
                             canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
                             if skip_if_enriched and canonical in url_vin_map:
                                 vin = str(url_vin_map.get(canonical) or '').strip().upper()
-                                enr = vin_store.get(vin) if vin else None
+                                # Prefer DB-backed enrichment, fallback to JSON store
+                                enr = None
+                                if vin and db_conn is not None:
+                                    try:
+                                        row = db_conn.execute(
+                                            "SELECT parsed_json, derived_json FROM vin_enriched WHERE vin = ?",
+                                            (vin,),
+                                        ).fetchone()
+                                        if row:
+                                            parsed_json = json.loads(row[0]) if row[0] else {}
+                                            derived_json = json.loads(row[1]) if row[1] else {}
+                                            enr = {"parsed": parsed_json, "derived": derived_json}
+                                    except Exception:
+                                        enr = None
+                                if enr is None and vin:
+                                    enr = vin_store.get(vin) if isinstance(vin_store, dict) else None
                                 if enr:
                                     results.append({
                                         'scraping_id': url_data.get('scraping_id'),
@@ -650,37 +686,49 @@ class ScrapingStep(BasePipelineStep):
                                         'raw_html': '',
                                         'extracted_data': { 'enriched': {
                                             'vin': vin,
-                                            'parsed': enr.get('parsed', {}),
-                                            'derived': enr.get('derived', {})
+                                            'parsed': enr.get('parsed', enr.get('parsed_json', {})) if isinstance(enr, dict) else {},
+                                            'derived': enr.get('derived', enr.get('derived_json', {})) if isinstance(enr, dict) else {}
                                         }}
                                     })
                                     successful_count += 1
                                     return
                             if cache_enabled:
-                                should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
-                                if should_skip:
-                                    rec = listing_cache.get(canonical)
-                                    if rec and rec.data_blob:
-                                        results.append({
-                                            'scraping_id': url_data.get('scraping_id'),
-                                            'source_url': url_data.get('source_url', ''),
-                                            'listing_url': listing_url,
-                                            'canonical_url': canonical,
-                                            'title': url_data.get('title', ''),
-                                            'collection_timestamp': url_data.get('collection_timestamp', ''),
-                                            'scraping_timestamp': datetime.now().isoformat(),
-                                            'scraping_status': 'success',
-                                            'scraping_method': 'cache',
-                                            'is_new': url_data.get('is_new', ''),
-                                            'first_seen_at': url_data.get('first_seen_at', ''),
-                                            'cache_hit': True,
-                                            'cache_reason': reason,
-                                            'raw_text': '',
-                                            'raw_html': '',
-                                            'extracted_data': rec.data_blob,
-                                        })
-                                        successful_count += 1
-                                        return
+                                # Prefer DB cache TTL, fallback to JSON cache
+                                rec_blob = None
+                                reason = ""
+                                if db_conn is not None:
+                                    try:
+                                        should, reason, rec = self._should_skip_db_cache(db_conn, canonical, ttl_days=ttl_days)
+                                        if should and rec:
+                                            rec_blob = rec.get('data_blob')
+                                    except Exception:
+                                        rec_blob = None
+                                else:
+                                    should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
+                                    if should_skip:
+                                        rec = listing_cache.get(canonical)
+                                        rec_blob = rec.data_blob if rec else None
+                                if rec_blob is not None:
+                                    results.append({
+                                        'scraping_id': url_data.get('scraping_id'),
+                                        'source_url': url_data.get('source_url', ''),
+                                        'listing_url': listing_url,
+                                        'canonical_url': canonical,
+                                        'title': url_data.get('title', ''),
+                                        'collection_timestamp': url_data.get('collection_timestamp', ''),
+                                        'scraping_timestamp': datetime.now().isoformat(),
+                                        'scraping_status': 'success',
+                                        'scraping_method': 'cache',
+                                        'is_new': url_data.get('is_new', ''),
+                                        'first_seen_at': url_data.get('first_seen_at', ''),
+                                        'cache_hit': True,
+                                        'cache_reason': reason,
+                                        'raw_text': '',
+                                        'raw_html': '',
+                                        'extracted_data': rec_blob,
+                                    })
+                                    successful_count += 1
+                                    return
 
                             page = await context.new_page()
                             try:
@@ -791,6 +839,12 @@ class ScrapingStep(BasePipelineStep):
 
                     await context.close()
                     await browser.close()
+                    # Close DB connection if used
+                    try:
+                        if db_conn is not None:
+                            db_conn.close()
+                    except Exception:
+                        pass
 
                     print(f"     📊 Concurrent scraping completed: {successful_count} successful, {failed_count} failed")
                     return results
@@ -983,8 +1037,10 @@ class ScrapingStep(BasePipelineStep):
         # Cache metrics
         cache_hits = len([d for d in processed_data if d.get('cache_hit') or d.get('scraping_method') == 'cache'])
         network_requests = len(processed_data) - cache_hits
+        # Enriched shortcut metrics
+        enriched_shortcuts = len([d for d in processed_data if str(d.get('scraping_method', '')).lower() == 'enriched_shortcut'])
         try:
-            print(f"🧠 Cache hits: {cache_hits} | Network scrapes: {network_requests}")
+            print(f"🧠 Cache hits: {cache_hits} | Network scrapes: {network_requests} | Enriched skips: {enriched_shortcuts}")
         except Exception:
             pass
 
@@ -997,12 +1053,16 @@ class ScrapingStep(BasePipelineStep):
             "invalid_data": invalid_data,
             "cache_hits": cache_hits,
             "network_requests": network_requests,
+            "enriched_shortcuts": enriched_shortcuts,
             "saved_files": saved_files,
             "scraping_stats": {
                 "scraping_success_rate": successful_scrapes / total_urls if total_urls > 0 else 0,
                 "data_validation_rate": valid_data / successful_scrapes if successful_scrapes > 0 else 0,
                 "average_validation_score": avg_validation_score,
-                "total_processing_time": sum(d.get('scraping_metadata', {}).get('processing_time_ms', 0) for d in processed_data)
+                "total_processing_time": sum(d.get('scraping_metadata', {}).get('processing_time_ms', 0) for d in processed_data),
+                "cache_hits": cache_hits,
+                "network_requests": network_requests,
+                "enriched_shortcuts": enriched_shortcuts,
             },
             "scraping_timestamp": datetime.now().isoformat()
         }

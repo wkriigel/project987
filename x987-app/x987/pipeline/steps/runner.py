@@ -77,7 +77,15 @@ class PipelineRunner:
                 summary = ""
                 data = step_result.data if isinstance(step_result.data, dict) else {}
                 if step_name == "transformation":
-                    summary = f"processed {data.get('total_listings', 0)}"
+                    # processed T, options O (avg P/listing)
+                    total = data.get('total_listings', 0)
+                    stats = data.get('transformation_stats', {}) if isinstance(data, dict) else {}
+                    opts = stats.get('options_detected', None)
+                    avg = stats.get('average_options_per_listing', None)
+                    if opts is not None and avg is not None:
+                        summary = f"processed {total}, options {opts} (avg {avg:.1f}/listing)"
+                    else:
+                        summary = f"processed {total}"
                 elif step_name == "deduplication":
                     summary = f"retained {data.get('final_count', 0)}/{data.get('original_count', 0)} (removed {data.get('duplicates_removed', 0)})"
                 elif step_name == "fair_value":
@@ -88,14 +96,22 @@ class PipelineRunner:
                 elif step_name == "view":
                     summary = f"displayed {data.get('total_listings', 0)}"
                 elif step_name == "collection":
-                    # Collection step often returns list; runner summary may be limited
+                    # found X URLs (Y new)
                     if isinstance(step_result.data, list):
-                        count = len(step_result.data)
+                        total = len(step_result.data)
+                        new = None
                     else:
-                        count = data.get('urls_collected') if 'urls_collected' in data else (
-                            data.get('total_urls') if 'total_urls' in data else data.get('count')
+                        total = data.get('urls_collected') if 'urls_collected' in data else (
+                            len(data.get('collection_data', []) ) if isinstance(data.get('collection_data'), list) else data.get('total_urls')
                         )
-                    summary = f"found {count} URLs" if count != "" else "completed"
+                        cs = data.get('collection_stats') if isinstance(data, dict) else {}
+                        new = (cs or {}).get('new_count') if isinstance(cs, dict) else None
+                    if total is None:
+                        summary = "completed"
+                    else:
+                        summary = f"found {total} URLs"
+                        if new is not None:
+                            summary += f" ({new} new)"
                 elif step_name == "scraping":
                     # Try to summarize success/fail from data if present (preserve zeros)
                     succ = data.get('successful_scrapes') if 'successful_scrapes' in data else (
@@ -107,10 +123,21 @@ class PipelineRunner:
                     total = data.get('total_pages_scraped') if 'total_pages_scraped' in data else (
                         data.get('total') if 'total' in data else data.get('total_listings')
                     )
+                    enr = data.get('enriched_shortcuts') if isinstance(data, dict) else None
+                    cache_hits = data.get('cache_hits') if isinstance(data, dict) else None
                     if succ is not None or fail is not None:
                         summary = f"scraped {succ or 0} ok, {fail or 0} failed"
+                        extras = []
+                        if enr is not None:
+                            extras.append(f"{enr} enriched skips")
+                        if cache_hits is not None:
+                            extras.append(f"{cache_hits} cache hits")
+                        if extras:
+                            summary += ", " + ", ".join(extras)
                     elif total is not None:
                         summary = f"scraped {total}"
+                        if enr is not None:
+                            summary += f" ({enr} enriched skips)"
                     else:
                         summary = "completed"
                 else:
