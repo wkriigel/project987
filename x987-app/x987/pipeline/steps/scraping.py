@@ -551,6 +551,12 @@ class ScrapingStep(BasePipelineStep):
                 
                 context.close()
                 browser.close()
+                # Close DB connection (serial path)
+                try:
+                    if db_conn is not None:
+                        db_conn.close()
+                except Exception:
+                    pass
             
             print(f"     📊 Scraping completed: {successful_count} successful, {failed_count} failed")
             return scraped_data
@@ -595,6 +601,18 @@ class ScrapingStep(BasePipelineStep):
                 cache_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
                 cache_path = cache_dir / 'listing_cache.json'
                 listing_cache = ListingCache(cache_path)
+
+                # Optional DB connection for cache/enrichment lookups
+                db_conn = None
+                try:
+                    cfg = kwargs.get('config', {})
+                    from ...db.integration import is_sqlite_enabled as _is_sqlite_enabled
+                    from ...db.core import get_connection as _get_connection, ensure_db as _ensure_db
+                    if _is_sqlite_enabled(cfg):
+                        _ensure_db(cfg)
+                        db_conn = _get_connection(cfg)
+                except Exception:
+                    db_conn = None
 
                 # Load URL→VIN index and VIN-enriched store for fast-shortcuts
                 skip_if_enriched = bool(scraping_config.get('skip_vdp_if_enriched', True))
@@ -889,12 +907,6 @@ class ScrapingStep(BasePipelineStep):
             else:
                 data['validation_status'] = 'failed'
                 failed_count += 1
-                # Close DB cache connection if opened
-                try:
-                    if db_conn is not None:
-                        db_conn.close()
-                except Exception:
-                    pass
             processed_data.append(data)
         
         print(f"       ✅ Successfully processed {successful_count} items")

@@ -80,6 +80,8 @@ export function App() {
   const [maxPrice, setMaxPrice] = useState<number | null>(50000)
   const [sortState, setSortState] = useState<{ key?: string; order?: 'ascend' | 'descend' }>({})
   const [favOnly, setFavOnly] = useState<boolean>(false)
+  // Quick filter: VIN present but not enriched
+  const [vinNoEnrichedOnly, setVinNoEnrichedOnly] = useState<boolean>(false)
 
   // Facets reflect VIN-enriched data and current filters (top + column)
   const optionFacets = useMemo(() => {
@@ -840,8 +842,19 @@ export function App() {
         } catch { return false }
       })
     }
+    // Apply VIN but not enriched filter
+    if (vinNoEnrichedOnly) {
+      rows = rows.filter((r: any) => {
+        try {
+          const vin = String(r?.vin || r?.VIN || '').trim().toUpperCase()
+          if (!vin) return false
+          const enriched = vinMap[vin]
+          return !enriched
+        } catch { return false }
+      })
+    }
     return rows
-  }, [data, generation, body, maxPrice, vinMap, favOnly, favorites])
+  }, [data, generation, body, maxPrice, vinMap, favOnly, favorites, vinNoEnrichedOnly])
   
   const sorted = useMemo(() => {
     const rows = [...filtered]
@@ -1025,6 +1038,9 @@ export function App() {
               </Button>
               <Button type={favOnly ? 'primary' : 'default'} onClick={() => setFavOnly(v => !v)} icon={favOnly ? <StarFilled /> : <StarOutlined />}>
                 Favorites Only
+              </Button>
+              <Button type={vinNoEnrichedOnly ? 'primary' : 'default'} onClick={() => setVinNoEnrichedOnly(v => !v)}>
+                VIN w/o Enrichment
               </Button>
             </div>
 
