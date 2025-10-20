@@ -372,7 +372,16 @@ class CollectionStep(BasePipelineStep):
                             try:
                                 mileage = extract_mileage_unified(container_text)
                             except Exception:
-                                pass
+                                mileage = None
+                            # Fallback: simple regex for mileage patterns if extractor misses
+                            if mileage is None:
+                                try:
+                                    import re
+                                    m = re.search(r"([0-9][0-9,]{1,7})\s*(mi\.?|miles)\b", container_text, re.I)
+                                    if m:
+                                        mileage = int(str(m.group(1)).replace(',', ''))
+                                except Exception:
+                                    mileage = None
                             try:
                                 y, m, _t = extract_vehicle_info_unified(title or container_text)
                                 year, model = y, m

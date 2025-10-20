@@ -63,6 +63,17 @@ class ScrapingStep(BasePipelineStep):
                 clean_text_unified = None  # type: ignore
             try:
                 blob = rec.get('data_blob') or {}
+                # If cache contains enriched-only payload with year, accept as complete
+                if isinstance(blob, dict) and blob.get('enriched'):
+                    try:
+                        parsed = (blob['enriched'].get('parsed') or blob['enriched'].get('parsed_json') or {}) if isinstance(blob['enriched'], dict) else {}
+                        if parsed.get('year') is not None:
+                            # Proceed to TTL check below
+                            pass
+                        else:
+                            return False, "miss:incomplete_enriched", rec
+                    except Exception:
+                        return False, "miss:incomplete_enriched", rec
                 raw_text = ""
                 if isinstance(blob, dict):
                     dom = blob.get("raw_dom_text") or ""
@@ -75,7 +86,8 @@ class ScrapingStep(BasePipelineStep):
                 has_miles = extract_mileage_unified(raw_text) is not None if extract_mileage_unified else True
                 y_m_t = extract_vehicle_info_unified(raw_text) if extract_vehicle_info_unified else (None, None, None)
                 year_val = y_m_t[0] if isinstance(y_m_t, tuple) and len(y_m_t) >= 1 else None
-                if not (has_price and has_miles and year_val is not None):
+                # If we don’t have enriched fallback, require price/miles/year from raw_text
+                if not (isinstance(blob, dict) and blob.get('enriched')) and not (has_price and has_miles and year_val is not None):
                     return False, "miss:incomplete_fields", rec
             except Exception:
                 pass
@@ -291,6 +303,14 @@ class ScrapingStep(BasePipelineStep):
                     try:
                         db_ensure_db(config)
                         db_conn = db_get_connection(config)
+                        # One-time DB backfill of URL→VIN index before processing batch
+                        try:
+                            from ..backfill_url_vin_db import backfill as _backfill_db
+                            count = _backfill_db(db_conn)
+                            if count:
+                                print(f"     🔧 Backfilled URL→VIN from DB: {count}")
+                        except Exception:
+                            pass
                     except Exception:
                         db_conn = None
 
@@ -325,6 +345,15 @@ class ScrapingStep(BasePipelineStep):
                         if not listing_url:
                             print(f"        ⚠️  Skipping URL {i+1}: No listing URL found")
                             continue
+                        # Skip unsupported sources (placeholder until implemented)
+                        try:
+                            from urllib.parse import urlsplit as _split
+                            host = (_split(listing_url).netloc or '').lower()
+                            if 'hemmings.com' in host or 'carvana.com' in host:
+                                print(f"        ⏭️  Skipping unsupported source: {host}")
+                                continue
+                        except Exception:
+                            pass
                         
                         print(f"        🕷️  Scraping {i+1}/{len(prepared_urls)}: {self._get_short_url(listing_url)}")
                         
@@ -347,7 +376,9 @@ class ScrapingStep(BasePipelineStep):
                                     enr = None
                             if enr is None and vin:
                                 enr = vin_store.get(vin) if isinstance(vin_store, dict) else None
-                            if enr:
+                            # Require mileage present from collection to safely skip; else fetch VDP to populate
+                            has_miles = url_data.get('mileage') is not None
+                            if enr and has_miles:
                                 # Produce a synthetic result using enriched data and current search price/mileage
                                 enriched_payload = {
                                     'vin': vin,
@@ -377,6 +408,15 @@ class ScrapingStep(BasePipelineStep):
                                 scraped_data.append(scraped_result)
                                 successful_count += 1
                                 print(f"        🚫 Skipped VDP (enriched VIN {vin})")
+                                # Save minimal cache entry for TTL-based skipping later
+                                try:
+                                    if db_conn is not None:
+                                        db_cache_save(db_conn, canonical, {'enriched': enriched_payload})
+                                    else:
+                                        listing_cache.save_result(canonical, {'enriched': enriched_payload})
+                                        listing_cache.save()
+                                except Exception:
+                                    pass
                                 continue
                         if cache_enabled:
                             skip = False
@@ -611,6 +651,14 @@ class ScrapingStep(BasePipelineStep):
                     if _is_sqlite_enabled(cfg):
                         _ensure_db(cfg)
                         db_conn = _get_connection(cfg)
+                        # One-time DB backfill of URL→VIN index before workers
+                        try:
+                            from ..backfill_url_vin_db import backfill as _backfill_db
+                            count = _backfill_db(db_conn)
+                            if count:
+                                print(f"     🔧 Backfilled URL→VIN from DB: {count}")
+                        except Exception:
+                            pass
                 except Exception:
                     db_conn = None
 
@@ -663,6 +711,14 @@ class ScrapingStep(BasePipelineStep):
                             if not listing_url:
                                 failed_count += 1
                                 return
+                            # Skip unsupported sources (placeholder)
+                            try:
+                                from urllib.parse import urlsplit as _split
+                                host = (_split(listing_url).netloc or '').lower()
+                                if 'hemmings.com' in host or 'carvana.com' in host:
+                                    return
+                            except Exception:
+                                pass
                             # Enriched-shortcut or cache decision before creating page
                             canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
                             if skip_if_enriched and canonical in url_vin_map:
@@ -683,7 +739,8 @@ class ScrapingStep(BasePipelineStep):
                                         enr = None
                                 if enr is None and vin:
                                     enr = vin_store.get(vin) if isinstance(vin_store, dict) else None
-                                if enr:
+                                has_miles = url_data.get('mileage') is not None
+                                if enr and has_miles:
                                     results.append({
                                         'scraping_id': url_data.get('scraping_id'),
                                         'source_url': url_data.get('source_url', ''),
@@ -709,6 +766,16 @@ class ScrapingStep(BasePipelineStep):
                                         }}
                                     })
                                     successful_count += 1
+                                    # Save minimal cache entry for TTL-based skipping later
+                                    try:
+                                        if db_conn is not None:
+                                            from ...db.api import cache_save as _db_cache_save
+                                            _db_cache_save(db_conn, canonical, {'enriched': enr})
+                                        else:
+                                            listing_cache.save_result(canonical, {'enriched': enr})
+                                            listing_cache.save()
+                                    except Exception:
+                                        pass
                                     return
                             if cache_enabled:
                                 # Prefer DB cache TTL, fallback to JSON cache
@@ -1048,9 +1115,10 @@ class ScrapingStep(BasePipelineStep):
         avg_validation_score = sum(validation_scores) / len(validation_scores) if validation_scores else 0
         # Cache metrics
         cache_hits = len([d for d in processed_data if d.get('cache_hit') or d.get('scraping_method') == 'cache'])
-        network_requests = len(processed_data) - cache_hits
         # Enriched shortcut metrics
         enriched_shortcuts = len([d for d in processed_data if str(d.get('scraping_method', '')).lower() == 'enriched_shortcut'])
+        # Network requests exclude cache and enriched shortcuts
+        network_requests = len(processed_data) - cache_hits - enriched_shortcuts
         try:
             print(f"🧠 Cache hits: {cache_hits} | Network scrapes: {network_requests} | Enriched skips: {enriched_shortcuts}")
         except Exception:

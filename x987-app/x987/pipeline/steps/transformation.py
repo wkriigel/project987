@@ -172,6 +172,22 @@ class TransformationStep(BasePipelineStep):
                 except Exception:
                     enriched = {}
 
+                # VIN fallback from enriched payload when not present in raw text
+                try:
+                    if not extracted_data.get('vin') and isinstance(enriched, dict):
+                        ev = enriched.get('vin') or (enriched.get('parsed') or {}).get('vin')
+                        if ev:
+                            extracted_data['vin'] = str(ev).upper()
+                except Exception:
+                    pass
+                # Persist URL→VIN index when obtained from enrichment
+                try:
+                    if extracted_data.get('vin') and listing.get('canonical_url'):
+                        from ..url_vin_index import upsert_url_vin
+                        upsert_url_vin(str(listing.get('canonical_url')), str(extracted_data.get('vin')).upper())
+                except Exception:
+                    pass
+
                 # Extract year
                 year_value = None
                 if enriched and isinstance(enriched.get('parsed'), dict):
@@ -206,14 +222,25 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['price'] = 'Unknown'
                     extracted_data['price_confidence'] = 0.0
                 
-                # Extract mileage
+                # Extract mileage (fallback to collection when DOM text insufficient)
                 mileage_value = extractor.extract_mileage(_raw_text)
                 if mileage_value is not None:
                     extracted_data['mileage'] = f"{mileage_value:,}"
                     extracted_data['mileage_confidence'] = 1.0
                 else:
-                    extracted_data['mileage'] = 'Unknown'
-                    extracted_data['mileage_confidence'] = 0.0
+                    # Fallback: accept numeric or numeric string from collection/scraping
+                    try:
+                        mv = listing.get('mileage')
+                        if mv is not None:
+                            mv_int = int(str(mv).replace(',', '').replace('$', '').strip())
+                            extracted_data['mileage'] = f"{mv_int:,}"
+                            extracted_data['mileage_confidence'] = 0.75
+                        else:
+                            extracted_data['mileage'] = 'Unknown'
+                            extracted_data['mileage_confidence'] = 0.0
+                    except Exception:
+                        extracted_data['mileage'] = 'Unknown'
+                        extracted_data['mileage_confidence'] = 0.0
                 
                 # Extract model/trim as separate fields (prefer enriched if available)
                 model_value = None
