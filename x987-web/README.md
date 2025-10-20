@@ -14,6 +14,21 @@ x987-web/
   .storybook/  # Storybook configuration (component examples)
 ```
 
+## VINAnalytics Enrichment
+
+This app supports pasting or one‑click ingest of VINAnalytics build data to enrich listings.
+
+Recommended flow:
+- Click a row’s VIN button to open the VINAnalytics page for that VIN.
+- Click the Bookmarklet (copy it from the header modal first). It navigates to `/ingest.html`, posts to `/api/vin/:vin/options`, closes the tab, and updates your original tab.
+
+Enriched fields:
+- MSRP total, options list, year, model, trim, exterior, interior.
+- Options show key chips (Chrono, LSD, PASM, PTV, PSE) + package names.
+- Model/trim prefers VINAnalytics BASE → e.g. `Cayman S` (treats `Base/Standard/Std` as generic).
+
+Manual paste fallback: If needed, paste the JSON payload directly to the API via `/api/vin/:vin/options`.
+
 ## Dev Setup
 
 1) Install dependencies (from `x987-web/` root):

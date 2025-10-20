@@ -158,7 +158,7 @@ class ViewStep(BasePipelineStep):
 
             # Add concise summary after table (items count + clickable config links)
             try:
-                summary_panel = self._create_post_table_summary(len(display_listings), unknown_urls, ranked_csv_path)
+                summary_panel = self._create_post_table_summary(display_listings, unknown_urls, ranked_csv_path)
                 if summary_panel:
                     console.print("")
                     console.print(summary_panel)
@@ -169,8 +169,9 @@ class ViewStep(BasePipelineStep):
             print(f"❌ Error generating enhanced report: {e}")
             raise
 
-    def _create_post_table_summary(self, displayed_count: int, unknown_urls: List[str], ranked_csv_path: Optional[str]) -> Panel:
-        """Create a compact summary showing item count, unknown-year links, and config links."""
+    def _create_post_table_summary(self, listings: List[Dict[str, Any]], unknown_urls: List[str], ranked_csv_path: Optional[str]) -> Panel:
+        """Create a compact summary showing item count, new indicators, unknown-year links, and config links."""
+        displayed_count = len(listings) if listings else 0
         count = int(displayed_count or 0)
 
         # Resolve config search URLs (try config manager)
@@ -190,6 +191,26 @@ class ViewStep(BasePipelineStep):
         table = Table(show_header=False, box=box.SIMPLE, pad_edge=False, expand=True)
         table.add_column("Summary", no_wrap=False)
         table.add_row(f"Items displayed: [bold]{count}[/bold]")
+
+        # New indicators
+        try:
+            new_this_run = len([l for l in (listings or []) if str(l.get('is_new', '')).lower() in ('1','true','yes') or l.get('is_new') is True])
+        except Exception:
+            new_this_run = 0
+        # First-seen within the last 2 days
+        from datetime import datetime, timedelta
+        def _within_2_days(ts: str) -> bool:
+            try:
+                dt = datetime.fromisoformat(str(ts).strip())
+                return datetime.now() - dt <= timedelta(days=2)
+            except Exception:
+                return False
+        try:
+            new_recent = len([l for l in (listings or []) if _within_2_days(l.get('first_seen_at',''))])
+        except Exception:
+            new_recent = 0
+        table.add_row(f"New this scan: [bold]{new_this_run}[/bold]")
+        table.add_row(f"New (≤2 days): [bold]{new_recent}[/bold]")
 
         # Source CSV filename
         try:

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Chip } from './Chip'
-import { bestTextColor, toPaintHex } from '../design/paint/normalize'
+import { bestTextColor, toPaintHex, normalizeExteriorName } from '../design/paint/normalize'
+import { exteriorPaint } from '../design/paint/colors'
 
 export type PaintChipProps = {
   kind: 'exterior' | 'interior'
@@ -18,7 +19,36 @@ export function PaintChip({ kind, name, hex, label, size = 'sm', className }: Pa
   const base = bestTextColor(bgHex)
   const color = base === '#000' ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)'
   const cls = (className ? className + ' ' : '') + 'normal-case'
-  return <Chip text={text} color={color} size={size} className={cls} style={{ backgroundColor: bgHex }} />
+
+  // Wrap exterior color chips with Rennbow link when we can derive a slug
+  const href = kind === 'exterior' ? rennbowHrefForExterior(name) : undefined
+  const chip = (
+    <Chip
+      text={text}
+      color={color}
+      size={size}
+      className={cls}
+      style={{ backgroundColor: bgHex }}
+    />
+  )
+  if (href) {
+    const onClick: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
+      try { e.stopPropagation() } catch {}
+    }
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer noopener"
+        onClick={onClick}
+        className="inline-block"
+        title={`Open on Rennbow`}
+      >
+        {chip}
+      </a>
+    )
+  }
+  return chip
 }
 
 export const PaintChipExterior = (p: Omit<PaintChipProps, 'kind'>) => <PaintChip kind="exterior" {...p} />
@@ -55,4 +85,42 @@ function transformWord(word: string, ACRONYMS: Set<string>): string {
   }).join('')
 
   return lead + titled + trail
+}
+
+// Attempt to derive a Rennbow URL for a given exterior color name.
+function rennbowHrefForExterior(name?: string): string | undefined {
+  const n = normalizeExteriorName(name)
+  if (!n) return undefined
+  const tryKeys = new Set<string>()
+  // Try exact normalized and with metallic suffix
+  tryKeys.add(n)
+  tryKeys.add(`${n} metallic`)
+  // Grey/Gray variants
+  tryKeys.add(n.replace(/grey/g, 'gray'))
+  tryKeys.add(n.replace(/gray/g, 'grey'))
+  tryKeys.add(`${n.replace(/grey/g, 'gray')} metallic`)
+  tryKeys.add(`${n.replace(/gray/g, 'grey')} metallic`)
+
+  // If any key is present in Rennbow exterior mapping, use that as canonical
+  let canonical: string | undefined
+  for (const k of tryKeys) {
+    if (exteriorPaint[k]) { canonical = k; break }
+  }
+  // Fallback: keep the normalized input
+  const baseName = toTitleCase(canonical || n)
+  const slug = toRennbowSlug(baseName)
+  if (!slug) return undefined
+  const url = `https://rennbow.org/porsche-colors/${encodeURIComponent(slug)}`
+  return url
+}
+
+function toRennbowSlug(name: string): string {
+  // Drop any parenthetical notes, punctuation; make PascalCase without spaces
+  const noParen = name.replace(/\([^\)]*\)/g, ' ')
+  const cleaned = noParen.replace(/[^A-Za-z0-9\s]+/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!cleaned) return ''
+  return cleaned
+    .split(' ')
+    .map((w) => (w ? (w.charAt(0).toUpperCase() + w.slice(1)) : w))
+    .join('')
 }

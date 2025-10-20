@@ -63,6 +63,27 @@ export function findGenerationCatalogJson(): string | null {
   ])
 }
 
+export function findVinEnrichedJson(): string | null {
+  // Prefer top-level metadata location; fallback to local API data dir
+  return ascendCandidates([
+    path.join('x987-data', 'metadata', 'vin_enriched.json'),
+    path.join('x987-web', 'apps', 'api', 'data', 'vin_enriched.json')
+  ])
+}
+
+export function ensureVinEnrichedPath(): string {
+  // Write path preference: top-level metadata directory
+  const preferredDir = ascendCandidates([
+    path.join('x987-data', 'metadata')
+  ]) || path.resolve(process.cwd(), 'x987-data', 'metadata')
+  try {
+    if (!fs.existsSync(preferredDir)) {
+      fs.mkdirSync(preferredDir, { recursive: true })
+    }
+  } catch {}
+  return path.join(preferredDir, 'vin_enriched.json')
+}
+
 export function findLatestRankingCsv(dir: string): string | null {
   const all = fs.readdirSync(dir).filter(f => f.toLowerCase().endsWith('.csv')).sort()
   // Prefer ranking_main_*

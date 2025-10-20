@@ -18,8 +18,10 @@ export const thresholdSpecs: Record<MetricKey, ThresholdSpec> = {
   // <40k (brightest), 40–60k, 60–80k, 80–100k, ≥100k (darkest) for T=60k
   miles: { orientation: 'lowerIsBetter', threshold: 60_000, farOver: 2/3, justUnder: 4/3, farUnder: 5/3 },
   // MSRP options: higher is better (more options value)
-  // <4k (darkest), 4–6k, 6–8k, 8–12k, ≥12k (brightest) for T=8k
-  msrp: { orientation: 'higherIsBetter', threshold: 8_000, farUnder: 0.5, justUnder: 0.75, farOver: 1.5 }
+  // New bands for T=80k:
+  // poor: < 68k | weak: 68k–73k | fair: 73k–77k | good: 77k–80k | excellent: ≥ 80k
+  // Encoding: threshold=T=80k, farUnder=0.85 (68k), justUnder=0.9125 (73k), farOver=0.9625 (77k)
+  msrp: { orientation: 'higherIsBetter', threshold: 80_000, farUnder: 0.85, justUnder: 0.9125, farOver: 0.9625 }
 }
 
 export function toLevelFromSpec(value: number | null | undefined, spec: ThresholdSpec): ThresholdLevel {
@@ -35,11 +37,16 @@ export function toLevelFromSpec(value: number | null | undefined, spec: Threshol
     if (value < fu) return 'weak'
     return 'poor'
   } else {
-    const fu = T * spec.farUnder // below this is darkest
-    const ju = T * spec.justUnder // below T but near threshold
-    const fo = T * spec.farOver // above this is brightest
-    if (value >= fo) return 'excellent'
-    if (value >= T) return 'good'
+    // For higherIsBetter, interpret:
+    //  - threshold (T): boundary between good and excellent (excellent: ≥ T)
+    //  - farOver: lower bound factor for 'good' (good: [T*farOver, T))
+    //  - justUnder: lower bound factor for 'fair'
+    //  - farUnder: lower bound factor for 'weak'
+    const fu = T * spec.farUnder // poor: < fu
+    const ju = T * spec.justUnder // weak: [fu, ju)
+    const go = T * (spec as any).farOver // fair: [ju, go), good: [go, T), excellent: ≥ T
+    if (value >= T) return 'excellent'
+    if (value >= go) return 'good'
     if (value >= ju) return 'fair'
     if (value >= fu) return 'weak'
     return 'poor'
@@ -63,13 +70,13 @@ export function describeBands(spec: ThresholdSpec): string[] {
   } else {
     const fu = T * spec.farUnder
     const ju = T * spec.justUnder
-    const fo = T * spec.farOver
+    const go = T * (spec as any).farOver
     return [
       `poor: < ${fmtK(fu)}`,
       `weak: ${fmtK(fu)}–${fmtK(ju)}`,
-      `fair: ${fmtK(ju)}–${fmtK(T)}`,
-      `good: ${fmtK(T)}–${fmtK(fo)}`,
-      `excellent: ≥ ${fmtK(fo)}`,
+      `fair: ${fmtK(ju)}–${fmtK(go)}`,
+      `good: ${fmtK(go)}–${fmtK(T)}`,
+      `excellent: ≥ ${fmtK(T)}`,
     ]
   }
 }

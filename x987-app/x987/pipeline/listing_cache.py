@@ -79,13 +79,59 @@ class ListingCache:
         canonical_url: str,
         ttl_days: int = 3,
     ) -> Tuple[bool, str]:
-        """Return (should_skip, reason). Conservative: require data_blob and TTL valid."""
+        """Return (should_skip, reason).
+
+        Rules (in order):
+        - miss:no_record → no cache record
+        - miss:no_payload → record present but no payload
+        - miss:incomplete_fields → cached payload exists but price/mileage/year appear missing
+        - miss:ttl_expired → TTL window expired
+        - hit:ttl_valid → safe to reuse cached payload
+        """
         self.load()
         rec = self._data.get(canonical_url)
         if not rec:
             return False, "miss:no_record"
         if not rec.data_blob:
             return False, "miss:no_payload"
+
+        # If cached payload appears incomplete, force a rescrape regardless of TTL
+        try:
+            from x987.utils.extractors import (
+                extract_price_unified,
+                extract_mileage_unified,
+                extract_vehicle_info_unified,
+                clean_text_unified,
+            )
+        except Exception:
+            # If extractors unavailable, be conservative and skip based on TTL only
+            extract_price_unified = extract_mileage_unified = extract_vehicle_info_unified = None  # type: ignore
+            clean_text_unified = None  # type: ignore
+
+        try:
+            blob = rec.data_blob or {}
+            raw_text = ""
+            if isinstance(blob, dict):
+                # Prefer DOM text; fall back to joined sections
+                dom = blob.get("raw_dom_text") or ""
+                sections = blob.get("raw_sections") or {}
+                joined = " \n ".join([str(v) for v in sections.values() if v]) if isinstance(sections, dict) else ""
+                raw_text = str(dom or joined or "")
+            if clean_text_unified:
+                raw_text = clean_text_unified(raw_text)  # type: ignore
+
+            has_price = extract_price_unified(raw_text) is not None if extract_price_unified else True
+            has_miles = extract_mileage_unified(raw_text) is not None if extract_mileage_unified else True
+            y_m_t = extract_vehicle_info_unified(raw_text) if extract_vehicle_info_unified else (None, None, None)
+            year_val = y_m_t[0] if isinstance(y_m_t, tuple) and len(y_m_t) >= 1 else None
+            has_year = year_val is not None
+
+            if not (has_price and has_miles and has_year):
+                return False, "miss:incomplete_fields"
+        except Exception:
+            # If something goes wrong computing completeness, fall back to TTL behavior
+            pass
+
         # TTL window
         try:
             if rec.last_scraped_at:

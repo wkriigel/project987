@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import type React from 'react'
 import type { MouseEvent } from 'react'
 import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented, Button, Tooltip } from 'antd'
-import { CopyOutlined } from '@ant-design/icons'
+import { CopyOutlined, StarFilled, StarOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import type { ColumnsType } from 'antd/es/table'
 import type { RankingRecord, RankingResponse } from './lib/types'
@@ -11,10 +11,11 @@ import { isEarlyYearDim, isMilesHighlighted, isModelCellHighlighted, isMsrpHighl
 import { roles } from './design/tokens/roles'
 import { palette } from './design/tokens/colors'
 import { SummaryHeader } from './components/SummaryHeader'
+import { HeaderBar } from './components/HeaderBar'
 import { Chip } from './components/Chip'
 import { ThresholdChip } from './components/ThresholdChip'
 import { thresholdSpecs, toLevelFromSpec } from './design/thresholds'
-import { facetCounts, tagsForRecord } from './lib/options'
+import { tagsForRecord } from './lib/options'
 import { PaintChipExterior, PaintChipInterior } from './components/PaintChip'
 import { extractPaintFromRecord, parseInteriorTwoTone } from './design/paint/normalize'
 import { FilterSelect } from './components/FilterSelect'
@@ -23,7 +24,7 @@ import type { GenerationValue } from './lib/filters'
 import { generationOptionsAll } from './lib/generation'
 import { BookmarkletModal } from './components/BookmarkletModal'
 
-const { Header, Content } = Layout
+const { Content } = Layout
 const { Text, Link } = Typography
 
 export function App() {
@@ -32,9 +33,6 @@ export function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const ymtInputRef = useRef<HTMLInputElement | null>(null)
-  const optionFacets = useMemo(() => facetCounts(data), [data])
-  const exteriorFacets = useMemo(() => paintFacetCounts('exterior', data), [data])
-  const interiorFacets = useMemo(() => paintFacetCounts('interior', data), [data])
   const [generation, setGeneration] = useState<GenerationValue>('bx-987.2')
   const [newCount, setNewCount] = useState<number>(0)
   const [recentCount, setRecentCount] = useState<number>(0)
@@ -42,10 +40,63 @@ export function App() {
   const [genCatalogStatus, setGenCatalogStatus] = useState<'idle'|'loading'|'ready'|'defaults'|'error'>('idle')
   const [vinMap, setVinMap] = useState<Record<string, any>>({})
   const [bmOpen, setBmOpen] = useState(false)
+  const [tableFilters, setTableFilters] = useState<Record<string, any[] | null>>({})
+  // Favorites (persisted across pipeline updates via localStorage)
+  const FAV_STORE_KEY = 'x987_favorites_v1'
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(FAV_STORE_KEY)
+      const arr: string[] = raw ? JSON.parse(raw) : []
+      return new Set(arr.filter(Boolean))
+    } catch { return new Set() }
+  })
+  useEffect(() => {
+    try { localStorage.setItem(FAV_STORE_KEY, JSON.stringify(Array.from(favorites))) } catch {}
+  }, [favorites])
+  // One-time action: mark specific VINs as favorites (simulates manual starring once)
+  useEffect(() => {
+    try {
+      const DONE_KEY = 'x987_seed_favs_once'
+      if (localStorage.getItem(DONE_KEY) === '1') return
+      const seedVins = [
+        'WP0AB2A88BU780484',
+        'WP0AB29829U780608',
+        'WP0AB2A83EK192718',
+        'WP0CB2A87DS130360',
+        'WP0CB2A8XES141001',
+        'WP0CB2A84ES140670',
+        'WP0AB2A89FK182065'
+      ]
+      setFavorites(prev => {
+        const next = new Set(prev)
+        seedVins.forEach(v => { const k = `VIN:${String(v || '').trim().toUpperCase()}`; if (k) next.add(k) })
+        return next
+      })
+      localStorage.setItem(DONE_KEY, '1')
+    } catch {/* ignore */}
+  }, [])
   // New filters
   const [body, setBody] = useState<'all'|'Boxster'|'Cayman'>('all')
   const [maxPrice, setMaxPrice] = useState<number | null>(50000)
-  const [msrpSort, setMsrpSort] = useState<'descend' | undefined>(undefined)
+  const [sortState, setSortState] = useState<{ key?: string; order?: 'ascend' | 'descend' }>({})
+  const [favOnly, setFavOnly] = useState<boolean>(false)
+
+  // Facets reflect VIN-enriched data and current filters (top + column)
+  const optionFacets = useMemo(() => {
+    const base = applyTopLevelFilters(data, generation, body, maxPrice, vinMap)
+    const scoped = applyColumnFiltersToRows(base, tableFilters, vinMap)
+    return optionFacetCountsEnriched(scoped, vinMap)
+  }, [data, generation, body, maxPrice, vinMap, tableFilters])
+  const exteriorFacets = useMemo(() => {
+    const base = applyTopLevelFilters(data, generation, body, maxPrice, vinMap)
+    const scoped = applyColumnFiltersToRows(base, tableFilters, vinMap)
+    return paintFacetCountsEnriched('exterior', scoped, vinMap)
+  }, [data, generation, body, maxPrice, vinMap, tableFilters])
+  const interiorFacets = useMemo(() => {
+    const base = applyTopLevelFilters(data, generation, body, maxPrice, vinMap)
+    const scoped = applyColumnFiltersToRows(base, tableFilters, vinMap)
+    return paintFacetCountsEnriched('interior', scoped, vinMap)
+  }, [data, generation, body, maxPrice, vinMap, tableFilters])
 
   useEffect(() => {
     let mounted = true
@@ -221,23 +272,51 @@ export function App() {
 
   const columns: ColumnsType<RankingRecord> = useMemo(() => [
     {
-      title: 'New',
-      key: 'new',
-      width: 70,
-      render: (_, r) => {
+      title: '',
+      key: 'fav',
+      width: 48,
+      align: 'center',
+      render: (_: any, r: any) => {
         try {
-          const firstSeen = r.first_seen_at ? new Date(String(r.first_seen_at)).getTime() : NaN
-          const recent = isFinite(firstSeen) ? (Date.now() - firstSeen) <= (2 * 24 * 60 * 60 * 1000) : false
-          const isNewRun = String(r.is_new).toLowerCase() === 'true' || String(r.is_new) === '1'
-          const show = isNewRun || recent
-          return show ? <Chip text="NEW" /> : null
+          const vin = String(r?.vin || r?.VIN || '').trim().toUpperCase()
+          const enriched = vin ? vinMap[vin] : null
+          const k = (() => {
+            const v = String(enriched?.parsed?.vin || vin || '').trim().toUpperCase()
+            if (v) return `VIN:${v}`
+            const cu = String(r?.canonical_url || '').trim()
+            if (cu) return `URL:${cu}`
+            const lu = String(r?.listing_url || '').trim()
+            if (lu) return `URL:${lu}`
+            const su = String(r?.source_url || '').trim()
+            if (su) return `SRC:${su}`
+            const y = toInt(r?.year) || 0
+            const mt = normalizeModelTrim(`${String(r?.model||'')} ${String(r?.trim||'')}`.trim())
+            const p = toInt(r?.asking_price_usd) || 0
+            const m = toInt(r?.mileage) || 0
+            return `ROW:${y}-${mt}-${p}-${m}`
+          })()
+          const isFav = favorites.has(k)
+          const onToggle = (e: MouseEvent) => {
+            try { e.stopPropagation() } catch {}
+            setFavorites(prev => {
+              const next = new Set(prev)
+              if (next.has(k)) next.delete(k); else next.add(k)
+              return next
+            })
+          }
+          return (
+            <Button type="text" size="small" aria-label={isFav ? 'Unfavorite' : 'Favorite'} onClick={onToggle}
+              icon={isFav ? <StarFilled style={{ color: '#f1c40f' }} /> : <StarOutlined style={{ color: '#999' }} />}
+            />
+          )
         } catch { return null }
       }
     },
     {
       title: 'Year',
       key: 'year',
-      width: 90,
+      width: 64,
+      sortOrder: (sortState as any)?.key === 'year' ? (sortState as any)?.order : undefined,
       sorter: (a,b) => {
         const va = String((a as any).vin || (a as any).VIN || '').trim().toUpperCase()
         const vb = String((b as any).vin || (b as any).VIN || '').trim().toUpperCase()
@@ -286,8 +365,9 @@ export function App() {
       }
     },
     {
-      title: 'Model/Trim',
+      title: 'Model',
       key: 'modeltrim',
+      sortOrder: (sortState as any)?.key === 'modeltrim' ? (sortState as any)?.order : undefined,
       sorter: (a,b) => {
         const va = String((a as any).vin || (a as any).VIN || '').trim().toUpperCase()
         const vb = String((b as any).vin || (b as any).VIN || '').trim().toUpperCase()
@@ -299,7 +379,7 @@ export function App() {
         <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
           <Input
             ref={ymtInputRef}
-            placeholder="Search model/trim"
+            placeholder="Search model"
             value={(selectedKeys as React.Key[])[0] as string}
             onChange={(e) => { const val = e.target.value; setSelectedKeys(val ? [val] : []); confirm({ closeDropdown: false }) }}
             onPressEnter={() => confirm()}
@@ -343,6 +423,7 @@ export function App() {
       title: 'Price',
       key: 'price',
       align: 'right',
+      sortOrder: (sortState as any)?.key === 'price' ? (sortState as any)?.order : undefined,
       sorter: (a,b) => (toInt(a.asking_price_usd)||0) - (toInt(b.asking_price_usd)||0),
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
         const curr = (() => {
@@ -397,6 +478,7 @@ export function App() {
       title: 'Miles',
       key: 'miles',
       align: 'right',
+      sortOrder: (sortState as any)?.key === 'miles' ? (sortState as any)?.order : undefined,
       sorter: (a,b) => (toInt(a.mileage)||0) - (toInt(b.mileage)||0),
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
         const curr = (() => {
@@ -448,9 +530,10 @@ export function App() {
       }
     },
     {
-      title: 'Opt $',
+      title: 'MSRP',
       key: 'msrp',
       align: 'right',
+      sortOrder: (sortState as any)?.key === 'msrp' ? (sortState as any)?.order : undefined,
       sorter: (a,b) => {
         const va = String((a as any).vin || (a as any).VIN || '').trim().toUpperCase()
         const vb = String((b as any).vin || (b as any).VIN || '').trim().toUpperCase()
@@ -458,8 +541,6 @@ export function App() {
         const eb = vb && vinMap[vb] ? toInt(vinMap[vb]?.parsed?.totalMsrp) : toInt((b as any).total_options_msrp)
         return (ea || 0) - (eb || 0)
       },
-      defaultSortOrder: 'descend',
-      sortOrder: msrpSort,
       filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => {
         const curr = (() => {
           try { return JSON.parse((selectedKeys as any)?.[0] || '{}') } catch { return {} }
@@ -614,8 +695,10 @@ export function App() {
         try { payload = JSON.parse(String(value)) } catch {}
         const chosen = payload.tags || []
         if (chosen.length === 0) return true
-        const exInfo = extractPaintFromRecord('exterior', rec)
-        const key = (exInfo.name || exInfo.hex || '').toString().trim().toLowerCase()
+        const vin = String((rec as any).vin || (rec as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const name = String(enriched?.parsed?.exterior || extractPaintFromRecord('exterior', rec).name || '')
+        const key = name.trim().toLowerCase()
         return chosen.includes(key)
       },
       render: (_, r) => {
@@ -661,8 +744,10 @@ export function App() {
         try { payload = JSON.parse(String(value)) } catch {}
         const chosen = payload.tags || []
         if (chosen.length === 0) return true
-        const inInfo = extractPaintFromRecord('interior', rec)
-        const key = (inInfo.name || inInfo.hex || '').toString().trim().toLowerCase()
+        const vin = String((rec as any).vin || (rec as any).VIN || '').trim().toUpperCase()
+        const enriched = vin ? vinMap[vin] : null
+        const name = String(enriched?.parsed?.interior || extractPaintFromRecord('interior', rec).name || '')
+        const key = name.trim().toLowerCase()
         return chosen.includes(key)
       },
       render: (_, r) => {
@@ -686,27 +771,15 @@ export function App() {
     {
       title: 'VIN',
       key: 'vin',
-      width: 64,
-      align: 'center',
+      width: 160,
+      align: 'left',
       render: (_: any, r: any) => {
         const vin = String(r?.vin || r?.VIN || '').trim()
         if (!vin) return ''
-        const onOpenVa = (e: MouseEvent) => {
-          try { e.stopPropagation() } catch {}
-          const url = `https://vinanalytics.com/car/${encodeURIComponent(vin.toUpperCase())}/`
-          try { window.open(url, '_blank', 'noopener') } catch { window.location.href = url }
-        }
-        return (
-          <Tooltip title="Open VINAnalytics">
-            <Button
-              type="text"
-              size="small"
-              icon={<CopyOutlined />}
-              aria-label="Open VINAnalytics"
-              onClick={onOpenVa}
-            />
-          </Tooltip>
-        )
+        const vinUp = vin.toUpperCase()
+        const url = `https://vinanalytics.com/car/${encodeURIComponent(vinUp)}/`
+        const onClick = (e: any) => { try { e.stopPropagation() } catch {} }
+        return <a href={url} onClick={onClick} target="_blank" rel="noreferrer" className="font-mono text-xs">{vinUp}</a>
       }
     },
     {
@@ -718,7 +791,7 @@ export function App() {
         return url ? <a href={url} target="_blank" rel="noreferrer">{host}</a> : ''
       }
     }
-  ], [optionFacets, vinMap, msrpSort])
+  ], [optionFacets, vinMap, sortState, favorites])
 
   const filtered = useMemo(() => {
     // Apply generation filter first
@@ -742,8 +815,83 @@ export function App() {
         return p != null && p <= maxPrice
       })
     }
+    // Apply favorites filter
+    if (favOnly) {
+      rows = rows.filter((r: any) => {
+        try {
+          const vin = String(r?.vin || r?.VIN || '').trim().toUpperCase()
+          const enriched = vin ? vinMap[vin] : null
+          const k = (() => {
+            const v = String(enriched?.parsed?.vin || vin || '').trim().toUpperCase()
+            if (v) return `VIN:${v}`
+            const cu = String(r?.canonical_url || '').trim()
+            if (cu) return `URL:${cu}`
+            const lu = String(r?.listing_url || '').trim()
+            if (lu) return `URL:${lu}`
+            const su = String(r?.source_url || '').trim()
+            if (su) return `SRC:${su}`
+            const y = toInt(r?.year) || 0
+            const mt = normalizeModelTrim(`${String(r?.model||'')} ${String(r?.trim||'')}`.trim())
+            const p = toInt(r?.asking_price_usd) || 0
+            const m = toInt(r?.mileage) || 0
+            return `ROW:${y}-${mt}-${p}-${m}`
+          })()
+          return favorites.has(k)
+        } catch { return false }
+      })
+    }
     return rows
-  }, [data, generation, body, maxPrice, vinMap])
+  }, [data, generation, body, maxPrice, vinMap, favOnly, favorites])
+  
+  const sorted = useMemo(() => {
+    const rows = [...filtered]
+    const key = (sortState as any)?.key
+    const order = (sortState as any)?.order
+    if (!key || !order) return rows
+    const dir = order === 'ascend' ? 1 : -1
+    const num = (v: any) => {
+      try { return typeof v === 'number' ? v : toInt(v) || 0 } catch { return 0 }
+    }
+    if (key === 'year') {
+      rows.sort((a: any, b: any) => {
+        const va = String(a?.vin || a?.VIN || '').trim().toUpperCase()
+        const vb = String(b?.vin || b?.VIN || '').trim().toUpperCase()
+        const ya = va && vinMap[va] ? toInt(vinMap[va]?.parsed?.year) : toInt(a?.year)
+        const yb = vb && vinMap[vb] ? toInt(vinMap[vb]?.parsed?.year) : toInt(b?.year)
+        return ((ya || 0) - (yb || 0)) * dir
+      })
+      return rows
+    }
+    if (key === 'modeltrim') {
+      rows.sort((a: any, b: any) => {
+        const va = String(a?.vin || a?.VIN || '').trim().toUpperCase()
+        const vb = String(b?.vin || b?.VIN || '').trim().toUpperCase()
+        const la = computeModelTrimLabel(a, va && vinMap[va] ? vinMap[va] : null)
+        const lb = computeModelTrimLabel(b, vb && vinMap[vb] ? vinMap[vb] : null)
+        return la.localeCompare(lb) * dir
+      })
+      return rows
+    }
+    if (key === 'price') {
+      rows.sort((a: any, b: any) => (num(a?.asking_price_usd) - num(b?.asking_price_usd)) * dir)
+      return rows
+    }
+    if (key === 'miles') {
+      rows.sort((a: any, b: any) => (num(a?.mileage) - num(b?.mileage)) * dir)
+      return rows
+    }
+    if (key === 'msrp') {
+      rows.sort((a: any, b: any) => {
+        const va = String(a?.vin || a?.VIN || '').trim().toUpperCase()
+        const vb = String(b?.vin || b?.VIN || '').trim().toUpperCase()
+        const ea = va && vinMap[va] ? toInt(vinMap[va]?.parsed?.totalMsrp) : toInt(a?.total_options_msrp)
+        const eb = vb && vinMap[vb] ? toInt(vinMap[vb]?.parsed?.totalMsrp) : toInt(b?.total_options_msrp)
+        return ((ea || 0) - (eb || 0)) * dir
+      })
+      return rows
+    }
+    return rows
+  }, [filtered, sortState, vinMap])
   const genOptions = useMemo(() => generationOptionsAll(data), [data])
   const summary = useMemo(() => {
     const displayed = filtered.filter(r => toInt(r.year) != null)
@@ -761,7 +909,37 @@ export function App() {
     } catch { /* ignore */ }
   }, [generation, filtered])
 
-  const [page, setPage] = useState<{ current: number; pageSize: number }>({ current: 1, pageSize: 20 })
+  const [page, setPage] = useState<{ current: number; pageSize: number }>({ current: 1, pageSize: 250 })
+
+  const handleExportFilteredJson = useCallback(() => {
+    try {
+      const rowsBase = filtered.filter(r => toInt(r.year) != null)
+      const afterTable = applyTableFilters(rowsBase as any[], columns as any[], tableFilters)
+      const out = afterTable.map((r: any) => {
+        try {
+          const vin = String((r?.vin || r?.VIN || '')).trim().toUpperCase()
+          const enr = vin ? vinMap[vin] : null
+          return { ...r, _enriched: enr || undefined }
+        } catch { return r }
+      })
+      const payload = JSON.stringify(out, null, 2)
+      const blob = new Blob([payload], { type: 'application/json;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const base = filename ? String(filename) : 'ranking'
+      const ts = new Date().toISOString().replace(/[:]/g, '-')
+      a.download = `${base.replace(/\.[a-z0-9]+$/i, '')}-filtered-${ts}.json`
+      a.href = url
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => {
+        try { document.body.removeChild(a) } catch {}
+        try { URL.revokeObjectURL(url) } catch {}
+      }, 0)
+    } catch (e) {
+      try { console.error('Export failed', e) } catch {}
+    }
+  }, [filtered, columns, tableFilters, vinMap, filename])
 
   // Debug logging: enable via ?debug_rows=1 or localStorage.x987_debug_rows='1'
   useEffect(() => {
@@ -804,13 +982,7 @@ export function App() {
       children: (
         <div className="p-3">
           <Space direction="vertical" size="middle" className="w-full">
-            <SummaryHeader
-              displayedCount={summary.displayedCount}
-              newCount={newCount}
-              recentCount={recentCount}
-              filename={filename}
-              unknownLinks={summary.unknown.map(r => (r.listing_url || r.source_url || "")).filter(Boolean)}
-            />
+            {/* moved summary header to Controls tab */}
 
             {/* Top-of-table controls */}
             <div className="flex flex-wrap gap-3 items-end">
@@ -845,15 +1017,89 @@ export function App() {
                   ...Array.from({ length: 10 }, (_, i) => (i + 1) * 10000).map(v => ({ label: `$${(v/1000)}k`, value: v }))
                 ]}
               />
-              <Button onClick={() => setMsrpSort('descend')}>
-                MSRP High → Low
+              <Button
+                onClick={() => setSortState({ key: 'msrp', order: 'descend' })}
+                icon={<SortDescendingOutlined />}
+              >
+                MSRP
+              </Button>
+              <Button type={favOnly ? 'primary' : 'default'} onClick={() => setFavOnly(v => !v)} icon={favOnly ? <StarFilled /> : <StarOutlined />}>
+                Favorites Only
               </Button>
             </div>
 
-            {/* Minimal, plain-text generation metadata display */}
+            {/* Generation summary moved to Controls tab */}
+
+            {loading ? <Spin/> : error ? <Text type="danger">{error}</Text> : (
+              <Table
+                size="small"
+                rowKey={(r) => (
+                  (r as any).vin || (r as any).VIN ||
+                  r.listing_url ||
+                  r.source_url ||
+                  `${toInt(r.year) || 0}-${normalizeModelTrim(((r.model || '') + ' ' + (r.trim || '')).trim()) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
+                )}
+                columns={columns}
+                dataSource={sorted.filter(r => toInt(r.year) != null)}
+                rowClassName={(r) => {
+                  try {
+                    const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+                    const enriched = vin && vinMap[vin] ? true : false
+                    // Build the same favorites key heuristic used by the star column
+                    const enrichedRec = vin ? vinMap[vin] : null
+                    const k = (() => {
+                      const v = String(enrichedRec?.parsed?.vin || vin || '').trim().toUpperCase()
+                      if (v) return `VIN:${v}`
+                      const cu = String((r as any).canonical_url || '').trim()
+                      if (cu) return `URL:${cu}`
+                      const lu = String((r as any).listing_url || '').trim()
+                      if (lu) return `URL:${lu}`
+                      const su = String((r as any).source_url || '').trim()
+                      if (su) return `SRC:${su}`
+                      const y = toInt((r as any).year) || 0
+                      const mt = normalizeModelTrim(`${String((r as any).model||'')} ${String((r as any).trim||'')}`.trim())
+                      const p = toInt((r as any).asking_price_usd) || 0
+                      const m = toInt((r as any).mileage) || 0
+                      return `ROW:${y}-${mt}-${p}-${m}`
+                    })()
+                    const fav = favorites.has(k)
+                    if (enriched && fav) return 'row-enriched row-favorite'
+                    if (enriched) return 'row-enriched'
+                    if (fav) return 'row-favorite'
+                    return ''
+                  } catch { return '' }
+                }}
+                pagination={{ current: page.current, pageSize: page.pageSize }}
+                onChange={(pag, _filters, sorter: any) => {
+                  setPage({ current: pag?.current ?? 1, pageSize: pag?.pageSize ?? page.pageSize })
+                  try { setTableFilters(_filters as any) } catch {}
+                  try {
+                    const k = Array.isArray(sorter) ? sorter[0]?.columnKey : sorter?.columnKey
+                    const order = Array.isArray(sorter) ? sorter[0]?.order : sorter?.order
+                    setSortState({ key: k as any, order: order as any })
+                  } catch {}
+                }}
+              />
+            )}
+          </Space>
+        </div>
+      )
+    },
+    {
+      key: 'controls',
+      label: 'Controls',
+      children: (
+        <div className="p-3">
+          <Space direction="vertical" size="middle" className="w-full">
+            <SummaryHeader
+              displayedCount={summary.displayedCount}
+              newCount={newCount}
+              recentCount={recentCount}
+              filename={filename}
+              unknownLinks={summary.unknown.map(r => (r.listing_url || r.source_url || "")).filter(Boolean)}
+            />
             {generation !== 'all' && (
               <div className="mt-2 text-xs md:text-sm">
-                {/* Trims line */}
                 <div>
                   <strong>Trims:</strong>{' '}
                   {(() => {
@@ -868,7 +1114,6 @@ export function App() {
                     } catch { return '(defaults pending)' }
                   })()}
                 </div>
-                {/* Options line */}
                 <div>
                   <strong>Options:</strong>{' '}
                   {(() => {
@@ -905,46 +1150,6 @@ export function App() {
                 )}
               </div>
             )}
-
-            {loading ? <Spin/> : error ? <Text type="danger">{error}</Text> : (
-              <Table
-                size="small"
-                rowKey={(r) => (
-                  (r as any).vin || (r as any).VIN ||
-                  r.listing_url ||
-                  r.source_url ||
-                  `${toInt(r.year) || 0}-${normalizeModelTrim(((r.model || '') + ' ' + (r.trim || '')).trim()) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
-                )}
-                columns={columns}
-                dataSource={filtered.filter(r => toInt(r.year) != null)}
-                rowClassName={(r) => {
-                  try {
-                    const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
-                    return vin && vinMap[vin] ? 'row-enriched' : ''
-                  } catch { return '' }
-                }}
-                pagination={{ current: page.current, pageSize: page.pageSize }}
-                onChange={(pag, _filters, sorter: any) => {
-                  setPage({ current: pag?.current ?? 1, pageSize: pag?.pageSize ?? 20 })
-                  try {
-                    const k = Array.isArray(sorter) ? sorter[0]?.columnKey : sorter?.columnKey
-                    const order = Array.isArray(sorter) ? sorter[0]?.order : sorter?.order
-                    if (k === 'msrp') setMsrpSort(order || undefined)
-                    else setMsrpSort(undefined)
-                  } catch {}
-                }}
-              />
-            )}
-          </Space>
-        </div>
-      )
-    },
-    {
-      key: 'controls',
-      label: 'Controls',
-      children: (
-        <div className="p-3">
-          <Space direction="vertical" size="middle" className="w-full">
             <Card title="Config (read-only skeleton)">
               <Text type="secondary">This tab will load and edit config.toml. (Scaffolded)</Text>
             </Card>
@@ -1020,14 +1225,20 @@ export function App() {
       }}
     >
       <Layout style={{ minHeight: '100vh', background: roles.bg.page as string }}>
-        <Header style={{ color: roles.text.primary as string, fontWeight: 600, background: roles.bg.surfaceAlt as string, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>x987 Web</div>
-          <div>
-            <Button size="small" onClick={() => setBmOpen(true)}>Bookmarklet</Button>
-          </div>
-        </Header>
+        <HeaderBar
+          title="x987"
+          subtitle="Web"
+          onExport={handleExportFilteredJson}
+          onBookmarklet={() => setBmOpen(true)}
+        />
         <Content style={{ background: roles.bg.surface as string }}>
-          <Tabs items={items} />
+          <Tabs
+            items={items}
+            type="line"
+            size="large"
+            tabBarGutter={16}
+            tabBarStyle={{ margin: '8px 12px 0' }}
+          />
         </Content>
       </Layout>
       <BookmarkletModal open={bmOpen} onClose={() => setBmOpen(false)} />
@@ -1035,13 +1246,212 @@ export function App() {
   )
 }
 
-function paintFacetCounts(kind: 'exterior'|'interior', data: any[]) {
+// Build a filtered snapshot matching current Table filters
+function applyTableFilters(
+  rows: any[],
+  columns: any[],
+  filters: Record<string, any[] | null>
+): any[] {
+  try {
+    if (!rows || !rows.length) return rows
+    const active = (columns || []).filter((c: any) => (
+      c && c.key && typeof c.onFilter === 'function' && filters && Array.isArray(filters[c.key]) && (filters[c.key] as any[]).length > 0
+    ))
+    if (!active.length) return rows
+    return rows.filter((rec: any) => {
+      for (const col of active) {
+        const vals = (filters[col.key] || []) as any[]
+        // AntD semantics: OR within a column's selected values
+        const ok = vals.some((v) => {
+          try { return col.onFilter(v, rec) } catch { return false }
+        })
+        if (!ok) return false
+      }
+      return true
+    })
+  } catch { return rows }
+}
+
+// Apply top-of-table filters (generation, body, price) to a dataset
+function applyTopLevelFilters(
+  data: any[],
+  generation: any,
+  body: 'all'|'Boxster'|'Cayman',
+  maxPrice: number | null,
+  vinMap: Record<string, any>
+): any[] {
+  try {
+    let rows = applyGenerationFilter(data, generation)
+    if (body !== 'all') {
+      const target = String(body || '').toLowerCase()
+      rows = rows.filter((r: any) => {
+        try {
+          const vin = String(r?.vin || r?.VIN || '').trim().toUpperCase()
+          const enriched = vin ? vinMap[vin] : null
+          const mt = computeModelTrimLabel(r, enriched)
+          return (mt || '').toLowerCase().startsWith(target)
+        } catch { return false }
+      })
+    }
+    if (maxPrice != null) {
+      rows = rows.filter((r: any) => {
+        const p = toInt((r as any).asking_price_usd)
+        return p != null && p <= maxPrice
+      })
+    }
+    return rows
+  } catch { return data || [] }
+}
+
+// Apply active column filters without needing AntD column definitions
+function applyColumnFiltersToRows(
+  rows: any[],
+  filters: Record<string, any[] | null>,
+  vinMap: Record<string, any>
+): any[] {
+  try {
+    if (!filters) return rows
+    return (rows || []).filter((rec: any) => {
+      const vin = String((rec?.vin || rec?.VIN || '')).trim().toUpperCase()
+      const enriched = vin ? vinMap[vin] : null
+
+      // Helper: parse first JSON payload for a key
+      const parsePayload = (key: string): any => {
+        try {
+          const arr = (filters as any)[key]
+          if (!Array.isArray(arr) || arr.length === 0) return undefined
+          const v = arr[0]
+          return typeof v === 'string' ? JSON.parse(v) : v
+        } catch { return undefined }
+      }
+
+      // Year range
+      if (Array.isArray(filters.year) && filters.year.length) {
+        const payload = parsePayload('year') || {}
+        const v = (() => {
+          try { return enriched?.parsed?.year != null ? toInt(enriched.parsed.year) : toInt(rec.year) } catch { return toInt(rec.year) }
+        })()
+        if (v == null) return false
+        if (payload.min != null && v < payload.min) return false
+        if (payload.max != null && v > payload.max) return false
+      }
+
+      // Model/Trim search
+      if (Array.isArray(filters.modeltrim) && filters.modeltrim.length) {
+        const needle = String(filters.modeltrim[0] || '').toLowerCase()
+        const mt = computeModelTrimLabel(rec, enriched).toLowerCase()
+        if (!mt.includes(needle)) return false
+      }
+
+      // Price range
+      if (Array.isArray(filters.price) && filters.price.length) {
+        const payload = parsePayload('price') || {}
+        const v = toInt(rec.asking_price_usd)
+        if (v == null) return false
+        if (payload.min != null && v < payload.min) return false
+        if (payload.max != null && v > payload.max) return false
+      }
+
+      // Miles range
+      if (Array.isArray(filters.miles) && filters.miles.length) {
+        const payload = parsePayload('miles') || {}
+        const v = toInt(rec.mileage)
+        if (v == null) return false
+        if (payload.min != null && v < payload.min) return false
+        if (payload.max != null && v > payload.max) return false
+      }
+
+      // MSRP (Opt $) range
+      if (Array.isArray(filters.msrp) && filters.msrp.length) {
+        const payload = parsePayload('msrp') || {}
+        const v = (() => {
+          try { return enriched?.parsed?.totalMsrp != null ? toInt(enriched.parsed.totalMsrp) : toInt(rec.total_options_msrp) } catch { return toInt(rec.total_options_msrp) }
+        })()
+        if (v == null) return false
+        if (payload.min != null && v < payload.min) return false
+        if (payload.max != null && v > payload.max) return false
+      }
+
+      // Options tags (VIN-enriched preferred; no fallback if enriched exists)
+      if (Array.isArray(filters.opts) && filters.opts.length) {
+        const payload = parsePayload('opts') || {}
+        const chosen: string[] = Array.isArray(payload.tags) ? payload.tags : []
+        const mode: 'and' | 'or' = (payload.mode === 'or') ? 'or' : 'and'
+        if (chosen.length) {
+          const tags = enriched
+            ? new Set<string>(Array.isArray(enriched?.derived?.normalizedOptions) ? enriched.derived.normalizedOptions : [])
+            : tagsForRecord(rec)
+          const ok = mode === 'and' ? chosen.every(t => tags.has(t)) : chosen.some(t => tags.has(t))
+          if (!ok) return false
+        }
+      }
+
+      // Exterior colors
+      if (Array.isArray(filters.exterior) && filters.exterior.length) {
+        const payload = parsePayload('exterior') || {}
+        const chosen: string[] = Array.isArray(payload.tags) ? payload.tags : []
+        if (chosen.length) {
+          const name = String(enriched?.parsed?.exterior || extractPaintFromRecord('exterior', rec).name || '')
+          const key = name.trim().toLowerCase()
+          if (!chosen.includes(key)) return false
+        }
+      }
+
+      // Interior colors
+      if (Array.isArray(filters.interior) && filters.interior.length) {
+        const payload = parsePayload('interior') || {}
+        const chosen: string[] = Array.isArray(payload.tags) ? payload.tags : []
+        if (chosen.length) {
+          const name = String(enriched?.parsed?.interior || extractPaintFromRecord('interior', rec).name || '')
+          const key = name.trim().toLowerCase()
+          if (!chosen.includes(key)) return false
+        }
+      }
+
+      return true
+    })
+  } catch { return rows }
+}
+
+// Counts option tags using VIN-enriched normalizedOptions when available; else falls back
+function optionFacetCountsEnriched(
+  data: any[],
+  vinMap: Record<string, any>
+): { tag: string; count: number }[] {
+  const counts = new Map<string, number>()
+  try {
+    for (const rec of (data || [])) {
+      const vin = String((rec?.vin || rec?.VIN || '')).trim().toUpperCase()
+      const enriched = vin ? vinMap[vin] : null
+      const tags: Set<string> = (() => {
+        if (enriched) {
+          const arr: any[] = Array.isArray(enriched?.derived?.normalizedOptions) ? enriched.derived.normalizedOptions : []
+          return new Set<string>(arr.filter((v) => typeof v === 'string' && v.trim()))
+        }
+        return tagsForRecord(rec as any)
+      })()
+      for (const t of tags) counts.set(t, (counts.get(t) || 0) + 1)
+    }
+  } catch { /* ignore */ }
+  return Array.from(counts.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => (b.count - a.count) || a.tag.localeCompare(b.tag))
+}
+
+function paintFacetCountsEnriched(kind: 'exterior'|'interior', data: any[], vinMap: Record<string, any>) {
   const counts = new Map<string, number>()
   for (const r of data || []) {
-    const info = extractPaintFromRecord(kind, r)
-    const key = (info.name || info.hex || '').toString().trim().toLowerCase()
-    if (!key) continue
-    counts.set(key, (counts.get(key) || 0) + 1)
+    try {
+      const vin = String((r?.vin || r?.VIN || '')).trim().toUpperCase()
+      const enriched = vin ? vinMap[vin] : null
+      const name = String(
+        (kind === 'exterior' ? enriched?.parsed?.exterior : enriched?.parsed?.interior) ||
+        extractPaintFromRecord(kind, r).name || ''
+      )
+      const key = name.trim().toLowerCase()
+      if (!key) continue
+      counts.set(key, (counts.get(key) || 0) + 1)
+    } catch { /* ignore row */ }
   }
   return Array.from(counts.entries())
     .map(([key, count]) => ({ key, label: titleCase(key), count }))
@@ -1082,8 +1492,9 @@ function renderEnrichedOptions(enriched: any): React.ReactNode {
       if (sl.includes('exhaust')) return 'PSE'
       return s
     })
-    const keySet = new Set(priority)
-    const chips = priority
+    const hasPTV = normalized.some(s => s.toLowerCase().includes('ptv'))
+    const showPriority = hasPTV ? priority.filter(k => k.toLowerCase() !== 'lsd') : priority
+    const chips = showPriority
       .filter(k => normalized.some(s => s.toLowerCase().includes(k.toLowerCase())))
       .map(k => {
         // Make 'Chrono' a bit brighter than other option chips

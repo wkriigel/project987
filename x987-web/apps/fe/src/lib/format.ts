@@ -85,8 +85,9 @@ export function shortenOption(label: string): string {
   if (low.includes('pcm') && (low.includes('nav') || low.includes('navigation'))) return 'Nav'
   if (low.includes('sport chrono') || /\bchrono\b/.test(low)) return 'Chrono'
   if (low.includes('pasm') || low.includes('adaptive suspension') || low.includes('active suspension')) return 'PASM'
-  if (low.includes('sport exhaust') || /\bpse\b/.test(low)) return 'Exhaust'
+  if (low.includes('sport exhaust') || /\bpse\b/.test(low)) return 'PSE'
   if (low.includes('limited slip') || /\blsd\b/.test(low)) return 'LSD'
+  if (/\bptv\b/.test(low)) return 'PTV'
   // Hide transmissions; PDK/Tiptronic are assumed, not options
   if (/\bpdk\b/.test(low)) return ''
   if (low.includes('heated seat')) return 'Heated'

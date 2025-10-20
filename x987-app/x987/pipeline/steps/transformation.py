@@ -140,6 +140,7 @@ class TransformationStep(BasePipelineStep):
                     'extraction_timestamp': datetime.now().isoformat()
                 }
                 # VIN: try to extract from aggregated text early so it flows through
+                vin_value = None
                 try:
                     from ...utils.extractors import extract_vin_unified
                     vin_value = extract_vin_unified(_raw_text)
@@ -147,9 +148,32 @@ class TransformationStep(BasePipelineStep):
                         extracted_data['vin'] = vin_value
                 except Exception:
                     pass
+                # If VIN present and canonical_url exists, persist URL→VIN index for future short-circuiting
+                try:
+                    if vin_value and listing.get('canonical_url'):
+                        from ..url_vin_index import upsert_url_vin
+                        upsert_url_vin(str(listing.get('canonical_url')), str(vin_value).upper())
+                except Exception:
+                    pass
                 
+                # If this listing was created via an enriched shortcut, prefer enriched fields
+                enriched = {}
+                try:
+                    if str(listing.get('scraping_method', '')).lower() == 'enriched_shortcut':
+                        enriched = (listing.get('extracted_data') or {}).get('enriched') or {}
+                except Exception:
+                    enriched = {}
+
                 # Extract year
-                year_value = extractor.extract_year(_raw_text)
+                year_value = None
+                if enriched and isinstance(enriched.get('parsed'), dict):
+                    try:
+                        y = enriched['parsed'].get('year')
+                        year_value = int(y) if y is not None else None
+                    except Exception:
+                        year_value = None
+                if year_value is None:
+                    year_value = extractor.extract_year(_raw_text)
                 if year_value is not None:
                     extracted_data['year'] = str(year_value)
                     extracted_data['year_confidence'] = 1.0
@@ -157,8 +181,16 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['year'] = 'Unknown'
                     extracted_data['year_confidence'] = 0.0
                 
-                # Extract price
+                # Extract price — fallback to collection/search price when no DOM text (enriched shortcut)
                 price_value = extractor.extract_price(_raw_text)
+                if price_value is None:
+                    try:
+                        # Accept numeric or numeric string from scraping/collection
+                        pv = listing.get('price') or listing.get('search_price')
+                        if pv is not None:
+                            price_value = int(str(pv).replace(',', '').replace('$', '').strip())
+                    except Exception:
+                        price_value = None
                 if price_value is not None:
                     extracted_data['price'] = f"${price_value:,}"
                     extracted_data['price_confidence'] = 1.0
@@ -175,8 +207,17 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['mileage'] = 'Unknown'
                     extracted_data['mileage_confidence'] = 0.0
                 
-                # Extract model/trim as separate fields
-                model_value, trim_value = extractor.extract_model_trim(_raw_text)
+                # Extract model/trim as separate fields (prefer enriched if available)
+                model_value = None
+                trim_value = None
+                if enriched and isinstance(enriched.get('parsed'), dict):
+                    try:
+                        model_value = enriched['parsed'].get('model') or None
+                        trim_value = enriched['parsed'].get('trim') or None
+                    except Exception:
+                        model_value = trim_value = None
+                if not model_value:
+                    model_value, trim_value = extractor.extract_model_trim(_raw_text)
                 if model_value and model_value != "Unknown":
                     extracted_data['model'] = model_value
                     extracted_data['trim'] = trim_value or "Base"
@@ -188,8 +229,19 @@ class TransformationStep(BasePipelineStep):
                     extracted_data['model_confidence'] = 0.0
                     extracted_data['trim_confidence'] = 0.0
                 
-                # Extract colors as separate fields (stop merging); adopt schema names
-                exterior_color, interior_color = extractor.extract_colors(_raw_text)
+                # Extract colors as separate fields (prefer enriched if available)
+                exterior_color = None
+                interior_color = None
+                if enriched and isinstance(enriched.get('parsed'), dict):
+                    try:
+                        exterior_color = enriched['parsed'].get('exterior') or None
+                        interior_color = enriched['parsed'].get('interior') or None
+                    except Exception:
+                        exterior_color = interior_color = None
+                if not exterior_color or not interior_color:
+                    ex2, in2 = extractor.extract_colors(_raw_text)
+                    exterior_color = exterior_color or ex2
+                    interior_color = interior_color or in2
                 if exterior_color:
                     extracted_data['exterior'] = exterior_color
                     extracted_data['exterior_confidence'] = 1.0
@@ -300,50 +352,88 @@ class TransformationStep(BasePipelineStep):
                 except Exception:
                     year = None
                 
-                # Check each available option
+                # Prefer VIN-enriched options when available; else run detectors
                 pricing_mode = cfg.get_pricing_mode() if hasattr(cfg, 'get_pricing_mode') else 'msrp_only'
-                for option in all_options:
-                    try:
-                        # Option presence (pass trim if supported)
-                        present = option.is_present(raw_text, trim) if 'is_present' in dir(option) else False
-                        if present:
-                            option_info = {
-                                'id': getattr(option, 'get_id', lambda: 'unknown')(),
-                                'display': getattr(option, 'get_display', lambda: 'Unknown Option')(),
-                                'category': getattr(option, 'get_category', lambda: 'unknown')(),
-                                # Base value first, then override per model/generation if available
-                                'value': getattr(option, 'get_value', lambda x, y=None: 0)(raw_text, trim),
-                                'confidence': getattr(option, 'get_confidence', lambda: 1.0)()
-                            }
-                            
-                            # Override value per generation if configured
-                            opt_id = str(option_info['id'])
-                            override_val = get_override_value(opt_id, model, year)
-                            if pricing_mode != 'msrp_only' and override_val is not None:
-                                option_info['value'] = int(override_val)
-
-                            listing_options['detected_options'].append(option_info)
+                use_enriched = False
+                try:
+                    if str(listing.get('scraping_method', '')).lower() == 'enriched_shortcut':
+                        enr = (listing.get('extracted_data') or {}).get('enriched') or {}
+                        if isinstance(enr.get('parsed'), dict) and isinstance(enr.get('parsed', {}).get('options'), list):
+                            use_enriched = True
+                            total_msrp = 0
+                            det = []
+                            for opt in (enr['parsed'].get('options') or []):
+                                try:
+                                    code = str(opt.get('code') or '').strip()
+                                    name = str(opt.get('name') or code or 'Option').strip()
+                                    msrp_val = None
+                                    if code and code in msrp_catalog_norm:
+                                        msrp_val = msrp_catalog_norm[code]
+                                    if msrp_val is None and name and name in msrp_catalog_norm:
+                                        msrp_val = msrp_catalog_norm[name]
+                                    if msrp_val is None:
+                                        msrp_val = 494
+                                    total_msrp += int(msrp_val)
+                                    det.append({
+                                        'id': code or name,
+                                        'display': name,
+                                        'category': 'enriched',
+                                        'value': 0,
+                                        'confidence': 1.0
+                                    })
+                                except Exception:
+                                    continue
+                            listing_options['detected_options'] = det
+                            listing_options['total_options_msrp'] = total_msrp
                             if pricing_mode != 'msrp_only':
-                                listing_options['total_options_value'] += option_info['value']
-                            # Add MSRP if available for this option id
-                            # Prefer generation override as MSRP if present; else fallback to default catalog
-                            if override_val is not None:
-                                listing_options['total_options_msrp'] += int(override_val)
-                            elif opt_id in msrp_catalog_norm:
-                                listing_options['total_options_msrp'] += int(msrp_catalog_norm[opt_id])
-                            else:
-                                # Default MSRP for options without a known MSRP in catalog/overrides
-                                listing_options['total_options_msrp'] += 494
+                                listing_options['total_options_value'] = sum(o.get('value', 0) for o in det)
+                            listing_options['options_by_category'] = {'enriched': det}
+                except Exception:
+                    use_enriched = False
+
+                if not use_enriched:
+                    for option in all_options:
+                        try:
+                            # Option presence (pass trim if supported)
+                            present = option.is_present(raw_text, trim) if 'is_present' in dir(option) else False
+                            if present:
+                                option_info = {
+                                    'id': getattr(option, 'get_id', lambda: 'unknown')(),
+                                    'display': getattr(option, 'get_display', lambda: 'Unknown Option')(),
+                                    'category': getattr(option, 'get_category', lambda: 'unknown')(),
+                                    # Base value first, then override per model/generation if available
+                                    'value': getattr(option, 'get_value', lambda x, y=None: 0)(raw_text, trim),
+                                    'confidence': getattr(option, 'get_confidence', lambda: 1.0)()
+                                }
+                                
+                                # Override value per generation if configured
+                                opt_id = str(option_info['id'])
+                                override_val = get_override_value(opt_id, model, year)
+                                if pricing_mode != 'msrp_only' and override_val is not None:
+                                    option_info['value'] = int(override_val)
+
+                                listing_options['detected_options'].append(option_info)
+                                if pricing_mode != 'msrp_only':
+                                    listing_options['total_options_value'] += option_info['value']
+                                # Add MSRP if available for this option id
+                                # Prefer generation override as MSRP if present; else fallback to default catalog
+                                if override_val is not None:
+                                    listing_options['total_options_msrp'] += int(override_val)
+                                elif opt_id in msrp_catalog_norm:
+                                    listing_options['total_options_msrp'] += int(msrp_catalog_norm[opt_id])
+                                else:
+                                    # Default MSRP for options without a known MSRP in catalog/overrides
+                                    listing_options['total_options_msrp'] += 494
+                            
+                            # Group by category
+                            category = option_info['category']
+                            if category not in listing_options['options_by_category']:
+                                listing_options['options_by_category'][category] = []
+                            listing_options['options_by_category'][category].append(option_info)
                         
-                        # Group by category
-                        category = option_info['category']
-                        if category not in listing_options['options_by_category']:
-                            listing_options['options_by_category'][category] = []
-                        listing_options['options_by_category'][category].append(option_info)
-                    
-                    except Exception as e:
-                        print(f"       ⚠️  Error checking option: {e}")
-                        continue
+                        except Exception as e:
+                            print(f"       ⚠️  Error checking option: {e}")
+                            continue
                 
                 # Summaries
                 listing_options['total_options'] = len(listing_options.get('detected_options', []))

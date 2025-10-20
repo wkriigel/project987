@@ -2,3 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Subtle highlight for VIN-enriched rows */
+.ant-table .row-enriched > td {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Very subtle brighten for favorited rows */
+.ant-table .row-favorite > td {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* If a row is both enriched and favorited, slightly stronger */
+.ant-table .row-enriched.row-favorite > td {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+}
