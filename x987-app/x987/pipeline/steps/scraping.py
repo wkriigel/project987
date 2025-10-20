@@ -25,6 +25,22 @@ from ..listing_cache import ListingCache
 from ...db.integration import record_scraping, is_sqlite_enabled
 from ...db.core import get_connection as db_get_connection, ensure_db as db_ensure_db
 from ...db.api import cache_get as db_cache_get, cache_save as db_cache_save
+
+
+class ScrapingStep(BasePipelineStep):
+    """Scraping step implementing modular separation strategy"""
+    
+    def get_step_name(self) -> str:
+        return "scraping"
+    
+    def get_description(self) -> str:
+        return "Scrapes vehicle data from collected listing URLs"
+    
+    def get_dependencies(self) -> List[str]:
+        return ["collection"]  # Depends on collection step
+    
+    def get_required_config(self) -> List[str]:
+        return ["scraping"]
     
     def _should_skip_db_cache(self, conn, canonical_url: str, ttl_days: int = 3) -> tuple[bool, str, dict | None]:
         """DB-backed cache check mirroring ListingCache.should_skip."""
@@ -76,22 +92,6 @@ from ...db.api import cache_get as db_cache_get, cache_save as db_cache_save
             return True, "hit:ttl_valid", rec
         except Exception:
             return False, "miss:error", None
-
-
-class ScrapingStep(BasePipelineStep):
-    """Scraping step implementing modular separation strategy"""
-    
-    def get_step_name(self) -> str:
-        return "scraping"
-    
-    def get_description(self) -> str:
-        return "Scrapes vehicle data from collected listing URLs"
-    
-    def get_dependencies(self) -> List[str]:
-        return ["collection"]  # Depends on collection step
-    
-    def get_required_config(self) -> List[str]:
-        return ["scraping"]
     
     def run_step(self, config: Dict[str, Any], previous_results: Dict[str, StepResult], **kwargs) -> Any:
         """Execute the scraping step with high-quality process output"""
@@ -390,11 +390,11 @@ class ScrapingStep(BasePipelineStep):
                                         'raw_html': '',
                                         'extracted_data': rec_blob
                                     }
-                                    scraped_data.append(scraped_result)
-                                    successful_count += 1
-                                    print(f"        💾 Cache hit: {reason}")
-                                    # Skip network fetch
-                                    continue
+                                scraped_data.append(scraped_result)
+                                successful_count += 1
+                                print(f"        💾 Cache hit: {reason}")
+                                # Skip network fetch
+                                continue
 
                         # Create new page for each URL to avoid state issues
                         page = context.new_page()
