@@ -19,6 +19,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from .base import BasePipelineStep, StepResult
+from ...db.integration import record_transformation, is_sqlite_enabled
 
 
 class TransformationStep(BasePipelineStep):
@@ -92,6 +93,13 @@ class TransformationStep(BasePipelineStep):
             transformation_summary = self._generate_transformation_summary(
                 merged_data, options_data, unified_csv_file
             )
+
+            # Step 4.1: Persist parsed records into SQLite when enabled
+            try:
+                if is_sqlite_enabled(config):
+                    record_transformation(scraping_data, merged_data, config, options_data=options_data)
+            except Exception as e:
+                print(f"⚠️  SQLite save skipped: {e}")
 
             print("✅ Transformation completed successfully!")
             print(f"📊 Processed {len(extracted_properties)} listings")
@@ -455,6 +463,10 @@ class TransformationStep(BasePipelineStep):
                                    options_data: List[Dict[str, Any]], 
                                    config: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
         """Create the unified transformed CSV with all data"""
+        export_csv = bool((config.get('pipeline', {}) or {}).get('export_csv', True)) if isinstance(config, dict) else True
+        if not export_csv:
+            print("   🗃️  Skipping transformed CSV export (pipeline.export_csv = false)")
+            return "", [self._merge_row(properties, options, config) for properties, options in zip(extracted_properties, options_data)]
         print("   📄 Creating unified transformed CSV...")
         
         output_dir = Path(config.get('pipeline', {}).get('output_directory', 'x987-data/results'))
@@ -528,6 +540,42 @@ class TransformationStep(BasePipelineStep):
         except Exception as e:
             print(f"       ❌ Error creating unified CSV: {e}")
             return "", []
+
+    def _merge_row(self, properties: Dict[str, Any], options: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
+        # Helper to compose merged row without writing CSV
+        return {
+            'listing_id': None,
+            'source_url': properties.get('source_url', ''),
+            'listing_url': properties.get('listing_url', ''),
+            'canonical_url': properties.get('canonical_url', ''),
+            'vin': properties.get('vin', ''),
+            'is_new': properties.get('is_new', ''),
+            'first_seen_at': properties.get('first_seen_at', ''),
+            'extraction_timestamp': properties.get('extraction_timestamp', ''),
+            'detection_timestamp': options.get('detection_timestamp', ''),
+            'data_quality_score': properties.get('data_quality_score', 0),
+            'year': properties.get('year', ''),
+            'year_confidence': properties.get('year_confidence', ''),
+            'price': properties.get('price', ''),
+            'price_confidence': properties.get('price_confidence', ''),
+            'mileage': properties.get('mileage', ''),
+            'mileage_confidence': properties.get('mileage_confidence', ''),
+            'model': properties.get('model', ''),
+            'trim': properties.get('trim', ''),
+            'model_confidence': properties.get('model_confidence', ''),
+            'trim_confidence': properties.get('trim_confidence', ''),
+            'exterior': properties.get('exterior', ''),
+            'interior': properties.get('interior', ''),
+            'exterior_confidence': properties.get('exterior_confidence', ''),
+            'interior_confidence': properties.get('interior_confidence', ''),
+            'source': properties.get('source', ''),
+            'source_confidence': properties.get('source_confidence', ''),
+            'total_options': options.get('total_options', 0),
+            'total_options_value': '' if str(config.get('pricing_mode', 'msrp_only')).lower() == 'msrp_only' else options.get('total_options_value', 0),
+            'total_options_msrp': options.get('total_options_msrp', 0),
+            'options_categories': ', '.join(options.get('options_by_category', {}).keys()),
+            'options_list': ', '.join([opt.get('display', '') for opt in options.get('detected_options', [])])
+        }
     
     def _generate_transformation_summary(self, merged_data: List[Dict[str, Any]], 
                                        options_data: List[Dict[str, Any]], 

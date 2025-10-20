@@ -131,6 +131,11 @@ class ConfigManager:
         mode = self.get('pricing_mode', 'msrp_only')
         return str(mode or 'msrp_only').lower()
     
+    def get_storage_config(self) -> Dict[str, Any]:
+        """Return storage configuration section."""
+        cfg = self.get('storage', {})
+        return cfg if isinstance(cfg, dict) else {}
+    
     def reload(self):
         """Reload configuration from file"""
         self.config = DEFAULT_CONFIG.copy()

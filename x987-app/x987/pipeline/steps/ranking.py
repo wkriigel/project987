@@ -13,6 +13,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 from pathlib import Path
 from .base import BasePipelineStep, StepResult
+from ...db.integration import record_ranking, is_sqlite_enabled
 
 
 class RankingStep(BasePipelineStep):
@@ -82,14 +83,27 @@ class RankingStep(BasePipelineStep):
             output_dir = Path(config.get('pipeline', {}).get('output_directory', 'x987-data/results'))
             output_dir.mkdir(parents=True, exist_ok=True)
             ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-            out_file = output_dir / f"ranking_main_{ts}.csv"
-            self._save_csv(ranked, out_file)
-            print(f"📄 Saved MSRP-only ranking: {out_file}")
+            files_created: List[str] = []
+            export_csv = bool((config.get('pipeline', {}) or {}).get('export_csv', True)) if isinstance(config, dict) else True
+            if export_csv:
+                out_file = output_dir / f"ranking_main_{ts}.csv"
+                self._save_csv(ranked, out_file)
+                files_created.append(str(out_file))
+                print(f"📄 Saved MSRP-only ranking: {out_file}")
+            else:
+                print("📄 Skipping CSV export for ranking (pipeline.export_csv = false)")
+
+            # Persist ranking into SQLite when enabled
+            try:
+                if is_sqlite_enabled(config):
+                    record_ranking(ranked, ts, config)
+            except Exception as e:
+                print(f"⚠️  SQLite save skipped: {e}")
 
             return {
                 "total_listings": len(ranked),
                 "ranked_data": ranked,
-                "files_created": [str(out_file)],
+                "files_created": files_created,
                 "ranking_timestamp": datetime.now().isoformat()
             }
         finally:
@@ -97,6 +111,9 @@ class RankingStep(BasePipelineStep):
 
     def _save_csv(self, data: List[Dict[str, Any]], file_path: Path) -> None:
         import csv
+        from typing import Dict, Any
+        # Check pipeline.export_csv via heuristic: file_path is under pipeline.output_directory
+        # In this context, we do not have config; export gate is handled by caller before path creation.
         if not data:
             return
         with open(file_path, 'w', newline='', encoding='utf-8') as f:
@@ -108,4 +125,3 @@ class RankingStep(BasePipelineStep):
 
 # Export the step instance
 RANKING_STEP = RankingStep()
-
