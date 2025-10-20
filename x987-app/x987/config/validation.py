@@ -30,6 +30,7 @@ def validate_config(config: Dict[str, Any]) -> None:
         _validate_required_sections(config)
         _validate_search_section(config.get('search', {}))
         _validate_scraping_section(config.get('scraping', {}))
+        _validate_storage_section(config.get('storage', {}))
         # Fair value configuration removed in MSRP-only cleanup
         _validate_pricing_mode(config.get('pricing_mode', 'msrp_only'))
         _validate_options_section(config.get('options_v2', {}))
@@ -103,6 +104,31 @@ def _validate_scraping_section(scraping_config: Dict[str, Any]) -> None:
         if not isinstance(timeout, (int, float)) or timeout < 1:
             raise ConfigError("Scraping timeout must be a positive number")
 
+def _validate_storage_section(storage_config: Dict[str, Any]) -> None:
+    """Validate storage configuration section (optional, with sensible defaults)."""
+    if not storage_config:
+        return
+    if not isinstance(storage_config, dict):
+        raise ConfigError("Storage configuration must be a table (dict)")
+    mode = storage_config.get('mode', 'sqlite')
+    if mode not in ('sqlite', 'files'):
+        raise ConfigError("Storage mode must be 'sqlite' or 'files'")
+    if mode == 'sqlite':
+        db_path = storage_config.get('db_path')
+        if db_path is not None and not isinstance(db_path, str):
+            raise ConfigError("storage.db_path must be a string if provided")
+        # Optional retention
+        retention = storage_config.get('retention', {})
+        if retention:
+            if not isinstance(retention, dict):
+                raise ConfigError("storage.retention must be a table (dict)")
+            max_per = retention.get('scrapes_max_per_listing')
+            if max_per is not None and (not isinstance(max_per, int) or max_per < 0):
+                raise ConfigError("storage.retention.scrapes_max_per_listing must be a non-negative integer or null")
+            keep_failed = retention.get('keep_failed')
+            if keep_failed is not None and not isinstance(keep_failed, bool):
+                raise ConfigError("storage.retention.keep_failed must be a boolean")
+
 def _validate_pricing_mode(mode: Any) -> None:
     """Validate pricing_mode flag"""
     allowed = {'msrp_only', 'current'}
@@ -142,6 +168,10 @@ def _validate_pipeline_section(pipeline_config: Dict[str, Any]) -> None:
         create_separate = pipeline_config['create_separate_files']
         if not isinstance(create_separate, bool):
             raise ConfigError("Pipeline create separate files must be a boolean")
+    if 'export_csv' in pipeline_config:
+        export_csv = pipeline_config['export_csv']
+        if not isinstance(export_csv, bool):
+            raise ConfigError("Pipeline export_csv must be a boolean")
 
 def _validate_view_section(view_config: Dict[str, Any]) -> None:
     """Validate view configuration section"""

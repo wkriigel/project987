@@ -22,6 +22,60 @@ from datetime import datetime
 from .base import BasePipelineStep, StepResult
 from ..seen_registry import canonicalize_url
 from ..listing_cache import ListingCache
+from ...db.integration import record_scraping, is_sqlite_enabled
+from ...db.core import get_connection as db_get_connection, ensure_db as db_ensure_db
+from ...db.api import cache_get as db_cache_get, cache_save as db_cache_save
+    
+    def _should_skip_db_cache(self, conn, canonical_url: str, ttl_days: int = 3) -> tuple[bool, str, dict | None]:
+        """DB-backed cache check mirroring ListingCache.should_skip."""
+        try:
+            rec = db_cache_get(conn, canonical_url)
+            if not rec:
+                return False, "miss:no_record", None
+            if not rec.get('data_blob'):
+                return False, "miss:no_payload", None
+            # Completeness check via extractors (optional)
+            try:
+                from x987.utils.extractors import (
+                    extract_price_unified,
+                    extract_mileage_unified,
+                    extract_vehicle_info_unified,
+                    clean_text_unified,
+                )
+            except Exception:
+                extract_price_unified = extract_mileage_unified = extract_vehicle_info_unified = None  # type: ignore
+                clean_text_unified = None  # type: ignore
+            try:
+                blob = rec.get('data_blob') or {}
+                raw_text = ""
+                if isinstance(blob, dict):
+                    dom = blob.get("raw_dom_text") or ""
+                    sections = blob.get("raw_sections") or {}
+                    joined = " \n ".join([str(v) for v in sections.values() if v]) if isinstance(sections, dict) else ""
+                    raw_text = str(dom or joined or "")
+                if clean_text_unified:
+                    raw_text = clean_text_unified(raw_text)  # type: ignore
+                has_price = extract_price_unified(raw_text) is not None if extract_price_unified else True
+                has_miles = extract_mileage_unified(raw_text) is not None if extract_mileage_unified else True
+                y_m_t = extract_vehicle_info_unified(raw_text) if extract_vehicle_info_unified else (None, None, None)
+                year_val = y_m_t[0] if isinstance(y_m_t, tuple) and len(y_m_t) >= 1 else None
+                if not (has_price and has_miles and year_val is not None):
+                    return False, "miss:incomplete_fields", rec
+            except Exception:
+                pass
+            # TTL check
+            try:
+                last = rec.get('last_scraped_at')
+                if last:
+                    from datetime import datetime, timedelta
+                    t = datetime.fromisoformat(last)
+                    if datetime.now() - t > timedelta(days=max(0, int(ttl_days))):
+                        return False, "miss:ttl_expired", rec
+            except Exception:
+                return False, "miss:bad_timestamp", rec
+            return True, "hit:ttl_valid", rec
+        except Exception:
+            return False, "miss:error", None
 
 
 class ScrapingStep(BasePipelineStep):
@@ -106,6 +160,13 @@ class ScrapingStep(BasePipelineStep):
                 # Step 4: Save results
                 print("📄 Step 4: Saving scraping results...")
                 saved_files = self._save_scraping_results(processed_data, config)
+
+                # Also persist scrapes to SQLite when enabled
+                try:
+                    if is_sqlite_enabled(config):
+                        record_scraping(processed_data, config)
+                except Exception as e:
+                    print(f"⚠️  SQLite save skipped: {e}")
 
                 # Step 5: Summary
                 print("📊 Step 5: Generating scraping summary...")
@@ -212,12 +273,24 @@ class ScrapingStep(BasePipelineStep):
                 cache_cfg = (scraping_config.get('cache') or {}) if isinstance(scraping_config, dict) else {}
                 cache_enabled = bool(cache_cfg.get('enabled', True))
                 ttl_days = int(cache_cfg.get('ttl_days', 3))
-                # Place cache adjacent to results directory
-                # Use default results path here (config not in scope in this method)
+                # Place cache adjacent to results directory for legacy JSON fallback
                 output_dir = Path('x987-data/results')
                 cache_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
                 cache_path = cache_dir / 'listing_cache.json'
                 listing_cache = ListingCache(cache_path)
+                # Optional DB cache connection
+                use_db_cache = is_sqlite_enabled({'storage': scraping_config.get('storage')} if isinstance(scraping_config, dict) else {'storage': {}})
+                try:
+                    use_db_cache = is_sqlite_enabled(config)
+                except Exception:
+                    pass
+                db_conn = None
+                if use_db_cache:
+                    try:
+                        db_ensure_db(config)
+                        db_conn = db_get_connection(config)
+                    except Exception:
+                        db_conn = None
 
                 # Load URL→VIN index and VIN-enriched store for fast-shortcuts
                 skip_if_enriched = bool(scraping_config.get('skip_vdp_if_enriched', True))
@@ -286,11 +359,20 @@ class ScrapingStep(BasePipelineStep):
                                 print(f"        🚫 Skipped VDP (enriched VIN {vin})")
                                 continue
                         if cache_enabled:
-                            should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
-                            if should_skip:
-                                rec = listing_cache.get(canonical)
-                                if rec and rec.data_blob:
-                                    scraped_result = {
+                            skip = False
+                            reason = ""
+                            rec_blob = None
+                            if db_conn is not None:
+                                skip, reason, rec = self._should_skip_db_cache(db_conn, canonical, ttl_days=ttl_days)
+                                rec_blob = (rec or {}).get('data_blob') if rec else None
+                            else:
+                                should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
+                                if should_skip:
+                                    rec2 = listing_cache.get(canonical)
+                                    rec_blob = rec2.data_blob if rec2 else None
+                                    skip = True
+                            if skip and rec_blob:
+                                scraped_result = {
                                         'scraping_id': url_data.get('scraping_id'),
                                         'source_url': url_data.get('source_url', ''),
                                         'listing_url': listing_url,
@@ -306,7 +388,7 @@ class ScrapingStep(BasePipelineStep):
                                         'cache_reason': reason,
                                         'raw_text': '',
                                         'raw_html': '',
-                                        'extracted_data': rec.data_blob
+                                        'extracted_data': rec_blob
                                     }
                                     scraped_data.append(scraped_result)
                                     successful_count += 1
@@ -652,11 +734,14 @@ class ScrapingStep(BasePipelineStep):
                                     successful_count += 1
                                     # Save to cache
                                     try:
-                                        listing_cache.save_result(
-                                            canonical,
-                                            mapped['extracted_data'],
-                                        )
-                                        listing_cache.save()
+                                        if db_conn is not None:
+                                            db_cache_save(db_conn, canonical, mapped['extracted_data'])
+                                        else:
+                                            listing_cache.save_result(
+                                                canonical,
+                                                mapped['extracted_data'],
+                                            )
+                                            listing_cache.save()
                                     except Exception:
                                         pass
                                 else:
@@ -750,7 +835,12 @@ class ScrapingStep(BasePipelineStep):
             else:
                 data['validation_status'] = 'failed'
                 failed_count += 1
-            
+                # Close DB cache connection if opened
+                try:
+                    if db_conn is not None:
+                        db_conn.close()
+                except Exception:
+                    pass
             processed_data.append(data)
         
         print(f"       ✅ Successfully processed {successful_count} items")
@@ -781,6 +871,10 @@ class ScrapingStep(BasePipelineStep):
     
     def _save_scraping_results(self, processed_data: List[Dict[str, Any]], config: Dict[str, Any]) -> List[str]:
         """Save scraping results to files"""
+        export_csv = bool((config.get('pipeline', {}) or {}).get('export_csv', True)) if isinstance(config, dict) else True
+        if not export_csv:
+            print("     🗃️  Skipping CSV export (pipeline.export_csv = false)")
+            return []
         print("     📄 Saving scraping results to files...")
         
         output_dir = Path(config.get('pipeline', {}).get('output_directory', 'x987-data/results'))

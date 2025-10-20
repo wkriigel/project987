@@ -12,6 +12,18 @@ RISK: Low - defaults can be overridden by user config
 # Default configuration values
 DEFAULT_CONFIG = {
     "pricing_mode": "msrp_only",  # pricing modes: 'msrp_only' | 'current'
+    "storage": {
+        # Storage backend: 'sqlite' (preferred) or 'files' (legacy)
+        "mode": "sqlite",
+        # Default DB path; resolved relative to project root data dir
+        "db_path": "x987-data/x987.db",
+        "retention": {
+            # Keep at most N recent successful scrapes per listing (None = unlimited)
+            "scrapes_max_per_listing": 5,
+            # If true, failed scrapes do not count against the per-listing limit
+            "keep_failed": True
+        }
+    },
     "search": {
         "urls": [
             #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
@@ -33,6 +45,8 @@ DEFAULT_CONFIG = {
     },
     "pipeline": {
         "output_directory": "x987-data/results",
+        # Export CSV files (collection/scraping/transformed/deduped/ranking)
+        "export_csv": True,
         "create_separate_files": True,  # Create separate files for each property/option
         "raw_csv_name": "raw_extracted_data.csv",
         "transformed_csv_name": "transformed_data.csv",

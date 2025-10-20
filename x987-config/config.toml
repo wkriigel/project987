@@ -1,12 +1,21 @@
 pricing_mode = "msrp_only"
 
+[storage]
+mode = "sqlite"        # 'sqlite' (preferred) or 'files' (legacy)
+db_path = "x987-data/x987.db"
+  [storage.retention]
+  # Keep up to N recent successful scrapes per listing (0 = keep none, omit = unlimited)
+  scrapes_max_per_listing = 5
+  # If true, failed scrapes are not counted toward the limit
+  keep_failed = true
+
 [search]
 urls = [
     #"https://www.autotempest.com/results?keywords=black%20edition&localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
     "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=cayman&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2016&minyear=2013&model=cayman&transmission=auto&zip=30214",
-    "https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2016&minyear=2013&model=boxster&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2012&minyear=2009&model=boxster&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2016&minyear=2013&model=cayman&transmission=auto&zip=30214",
+    #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2016&minyear=2013&model=boxster&transmission=auto&zip=30214",
     #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=boxster&transmission=auto&zip=30214",
     #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2008&minyear=2005&model=cayman&transmission=auto&zip=30214",
     #"https://www.autotempest.com/results?localization=country&make=porsche&maxyear=2004&minyear=1999&model=911&transmission=auto&zip=30214",
@@ -989,3 +998,6 @@ top_options = [
   BOSE = 1350
   BIX = 1360
   "19W" = 1500
+[pipeline]
+# Export CSV files alongside DB writes (set false to reduce redundancy)
+export_csv = true

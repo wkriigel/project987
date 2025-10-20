@@ -12,6 +12,16 @@ node_modules/
 # Build outputs (do not commit compiled assets)
 x987-web/apps/api/dist/
 x987-web/apps/fe/storybook-static/
+x987-web/apps/fe/tsconfig.tsbuildinfo
+
+# Local dev env/editor
+x987-web/.env
+x987-web/.vscode/
+
+# Local enriched VIN store (runtime data)
+x987-data/metadata/vin_enriched.json
+# Local SQLite database (runtime data)
+x987-data/x987.db
 
 # OS cruft & logs
 .DS_Store

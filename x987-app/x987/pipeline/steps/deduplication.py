@@ -209,6 +209,10 @@ class DeduplicationStep(BasePipelineStep):
                                   deduped_data: List[Dict[str, Any]], 
                                   config: Dict[str, Any]) -> List[str]:
         """Save deduplication results to files"""
+        export_csv = bool((config.get('pipeline', {}) or {}).get('export_csv', True)) if isinstance(config, dict) else True
+        if not export_csv:
+            print("     🗃️  Skipping CSV export (pipeline.export_csv = false)")
+            return []
         print("     📄 Saving deduplication results...")
         
         output_dir = Path(config.get('pipeline', {}).get('output_directory', 'x987-data/results'))
