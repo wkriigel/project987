@@ -13,6 +13,7 @@ RISK: Medium - web scraping can be fragile, depends on collection step data qual
 """
 
 import time
+import json
 import csv
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -199,7 +200,15 @@ class ScrapingStep(BasePipelineStep):
                 except Exception:
                     context = browser.new_context()
                 
-                # Prepare cache
+                # Optional: warm URL→VIN index from recent CSVs
+                try:
+                    if bool(scraping_config.get('warm_index_on_start', True)):
+                        from ..backfill_url_vin import backfill as _warm_backfill
+                        _warm_backfill(Path('x987-data/results'), limit=5)
+                except Exception:
+                    pass
+
+                # Prepare cache and enrichment shortcuts
                 cache_cfg = (scraping_config.get('cache') or {}) if isinstance(scraping_config, dict) else {}
                 cache_enabled = bool(cache_cfg.get('enabled', True))
                 ttl_days = int(cache_cfg.get('ttl_days', 3))
@@ -209,6 +218,26 @@ class ScrapingStep(BasePipelineStep):
                 cache_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
                 cache_path = cache_dir / 'listing_cache.json'
                 listing_cache = ListingCache(cache_path)
+
+                # Load URL→VIN index and VIN-enriched store for fast-shortcuts
+                skip_if_enriched = bool(scraping_config.get('skip_vdp_if_enriched', True))
+                url_vin_map = {}
+                vin_store = {}
+                if skip_if_enriched:
+                    try:
+                        from ..url_vin_index import load_index as load_url_vin_index
+                        url_vin_map = load_url_vin_index() or {}
+                    except Exception:
+                        url_vin_map = {}
+                    try:
+                        vin_path = Path('x987-data/metadata/vin_enriched.json')
+                        if vin_path.exists():
+                            raw = json.loads(vin_path.read_text(encoding='utf-8'))
+                            vin_store = raw.get('entries') if isinstance(raw, dict) and 'entries' in raw else raw
+                            if not isinstance(vin_store, dict):
+                                vin_store = {}
+                    except Exception:
+                        vin_store = {}
 
                 # Process URLs with polite delays
                 for i, url_data in enumerate(prepared_urls):
@@ -220,8 +249,42 @@ class ScrapingStep(BasePipelineStep):
                         
                         print(f"        🕷️  Scraping {i+1}/{len(prepared_urls)}: {self._get_short_url(listing_url)}")
                         
-                        # Cache decision
+                        # Cache decision / enriched-shortcut
                         canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
+                        if skip_if_enriched and canonical in url_vin_map:
+                            vin = str(url_vin_map.get(canonical) or '').strip().upper()
+                            enr = vin_store.get(vin) if vin else None
+                            if enr:
+                                # Produce a synthetic result using enriched data and current search price/mileage
+                                enriched_payload = {
+                                    'vin': vin,
+                                    'parsed': enr.get('parsed', {}),
+                                    'derived': enr.get('derived', {})
+                                }
+                                scraped_result = {
+                                    'scraping_id': url_data.get('scraping_id'),
+                                    'source_url': url_data.get('source_url', ''),
+                                    'listing_url': listing_url,
+                                    'canonical_url': canonical,
+                                    'title': url_data.get('title', ''),
+                                    'collection_timestamp': url_data.get('collection_timestamp', ''),
+                                    'scraping_timestamp': datetime.now().isoformat(),
+                                    'scraping_status': 'success',
+                                    'scraping_method': 'enriched_shortcut',
+                                    'is_new': url_data.get('is_new', ''),
+                                    'first_seen_at': url_data.get('first_seen_at', ''),
+                                    'cache_hit': False,
+                                    'cache_reason': '',
+                                    'price': url_data.get('price'),
+                                    'mileage': url_data.get('mileage'),
+                                    'raw_text': '',
+                                    'raw_html': '',
+                                    'extracted_data': { 'enriched': enriched_payload }
+                                }
+                                scraped_data.append(scraped_result)
+                                successful_count += 1
+                                print(f"        🚫 Skipped VDP (enriched VIN {vin})")
+                                continue
                         if cache_enabled:
                             should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
                             if should_skip:
@@ -413,7 +476,15 @@ class ScrapingStep(BasePipelineStep):
                 polite_delay_ms = int(scraping_config.get('polite_delay_ms', 1000))
                 sem = asyncio.Semaphore(concurrency)
 
-                # Prepare cache (shared across workers, simple JSON file)
+                # Optional: warm URL→VIN index from recent CSVs
+                try:
+                    if bool(scraping_config.get('warm_index_on_start', True)):
+                        from ..backfill_url_vin import backfill as _warm_backfill
+                        _warm_backfill(Path('x987-data/results'), limit=5)
+                except Exception:
+                    pass
+
+                # Prepare cache and enrichment shortcuts (shared across workers)
                 cache_cfg = (scraping_config.get('cache') or {}) if isinstance(scraping_config, dict) else {}
                 ttl_days = int(cache_cfg.get('ttl_days', 3))
                 cache_enabled = bool(cache_cfg.get('enabled', True))
@@ -422,6 +493,26 @@ class ScrapingStep(BasePipelineStep):
                 cache_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
                 cache_path = cache_dir / 'listing_cache.json'
                 listing_cache = ListingCache(cache_path)
+
+                # Load URL→VIN index and VIN-enriched store for fast-shortcuts
+                skip_if_enriched = bool(scraping_config.get('skip_vdp_if_enriched', True))
+                url_vin_map = {}
+                vin_store = {}
+                if skip_if_enriched:
+                    try:
+                        from ..url_vin_index import load_index as load_url_vin_index
+                        url_vin_map = load_url_vin_index() or {}
+                    except Exception:
+                        url_vin_map = {}
+                    try:
+                        vin_path = Path('x987-data/metadata/vin_enriched.json')
+                        if vin_path.exists():
+                            raw = json.loads(vin_path.read_text(encoding='utf-8'))
+                            vin_store = raw.get('entries') if isinstance(raw, dict) and 'entries' in raw else raw
+                            if not isinstance(vin_store, dict):
+                                vin_store = {}
+                    except Exception:
+                        vin_store = {}
 
                 async with async_playwright() as p:
                     browser = await p.chromium.launch(headless=not headful)
@@ -451,8 +542,38 @@ class ScrapingStep(BasePipelineStep):
                             if not listing_url:
                                 failed_count += 1
                                 return
-                            # Cache decision before creating page
+                            # Enriched-shortcut or cache decision before creating page
                             canonical = url_data.get('canonical_url') or canonicalize_url(listing_url)
+                            if skip_if_enriched and canonical in url_vin_map:
+                                vin = str(url_vin_map.get(canonical) or '').strip().upper()
+                                enr = vin_store.get(vin) if vin else None
+                                if enr:
+                                    results.append({
+                                        'scraping_id': url_data.get('scraping_id'),
+                                        'source_url': url_data.get('source_url', ''),
+                                        'listing_url': listing_url,
+                                        'canonical_url': canonical,
+                                        'title': url_data.get('title', ''),
+                                        'collection_timestamp': url_data.get('collection_timestamp', ''),
+                                        'scraping_timestamp': datetime.now().isoformat(),
+                                        'scraping_status': 'success',
+                                        'scraping_method': 'enriched_shortcut',
+                                        'is_new': url_data.get('is_new', ''),
+                                        'first_seen_at': url_data.get('first_seen_at', ''),
+                                        'cache_hit': False,
+                                        'cache_reason': '',
+                                        'price': url_data.get('price'),
+                                        'mileage': url_data.get('mileage'),
+                                        'raw_text': '',
+                                        'raw_html': '',
+                                        'extracted_data': { 'enriched': {
+                                            'vin': vin,
+                                            'parsed': enr.get('parsed', {}),
+                                            'derived': enr.get('derived', {})
+                                        }}
+                                    })
+                                    successful_count += 1
+                                    return
                             if cache_enabled:
                                 should_skip, reason = listing_cache.should_skip(canonical, ttl_days=ttl_days)
                                 if should_skip:

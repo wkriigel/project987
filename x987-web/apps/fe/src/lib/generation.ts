@@ -121,10 +121,14 @@ function formatYears(y: { min: number; max?: number }) {
 export function generationOptionsAll(data: RankingRecord[]) {
   const withCounts = GENERATION_CATALOG.map(group => ({
     label: group.label,
-    options: group.items.map(item => ({
-      label: `${item.code} [${formatYears(item.years)}] (${countForGenerationItem(item, data)})`,
-      value: item.key
-    }))
+    options: group.items.map(item => {
+      const cnt = countForGenerationItem(item, data)
+      return {
+        label: `${item.code} [${formatYears(item.years)}] (${cnt})`,
+        value: item.key,
+        disabled: cnt === 0
+      }
+    })
   }))
 
   const total = (data || []).reduce((acc, r) => acc + (toInt(r.year) != null ? 1 : 0), 0)

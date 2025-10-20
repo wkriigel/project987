@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "shell": {
+      "executable": "zsh",
+      "args": [
+        "-c"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "label": "x987 API",
+      "type": "shell",
+      "command": "npm run dev:api",
+      "problemMatcher": []
+    },
+    {
+      "label": "x987 Frontend",
+      "type": "shell",
+      "command": "npm run dev:fe",
+      "problemMatcher": []
+    },
+    {
+      "label": "x987 Storybook",
+      "type": "shell",
+      "command": "npm run storybook",
+      "problemMatcher": []
+    },
+    {
+      "label": "x987 Dev (API + FE)",
+      "dependsOn": [
+        "x987 API",
+        "x987 Frontend"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "x987 Dev (All)",
+      "dependsOn": [
+        "x987 API",
+        "x987 Frontend",
+        "x987 Storybook"
+      ],
+      "dependsOrder": "sequence"
+    }
+  ]
+}

@@ -7,10 +7,14 @@ const { Text, Link } = Typography
 
 export function SummaryHeader({
   displayedCount,
+  newCount,
+  recentCount,
   filename,
   unknownLinks
 }: {
   displayedCount: number
+  newCount?: number
+  recentCount?: number
   filename?: string
   unknownLinks?: string[]
 }) {
@@ -21,6 +25,14 @@ export function SummaryHeader({
         <div>
           <div className="text-xs text-gray-400">Items displayed</div>
           <Chip text={displayedCount} bg={roles.bg.emphasis as string} color={roles.text.primary as string} />
+        </div>
+        <div>
+          <div className="text-xs text-gray-400">New this scan</div>
+          <Chip text={newCount ?? 0} bg={roles.bg.emphasis as string} color={roles.text.primary as string} />
+        </div>
+        <div>
+          <div className="text-xs text-gray-400">New (≤2 days)</div>
+          <Chip text={recentCount ?? 0} bg={roles.bg.emphasis as string} color={roles.text.primary as string} />
         </div>
         <div>
           <div className="text-xs text-gray-400">Thresholds (teal/green)</div>

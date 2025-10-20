@@ -4,10 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import { parseCsvToJson } from './utils/csv';
 import { findResultsDir, findConfigPath, findLatestRankingCsv, findGenerationCatalogJson, resultsDirCandidates } from './utils/fsPaths';
+import { getAllVinRecords, getVinRecord, parseVinAnalyticsBlob, upsertVinRecord } from './vin';
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
@@ -99,6 +100,67 @@ app.get('/api/catalog/generations', (_req, res) => {
     return res.status(500).json({ ok: false, error: e?.message || 'catalog read error' });
   }
 });
+
+// VIN enrichment endpoints
+app.get('/api/vin', (_req, res) => {
+  try {
+    const entries = getAllVinRecords()
+    res.json({ ok: true, count: Object.keys(entries).length, entries })
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message || 'vin store read error' })
+  }
+})
+
+app.get('/api/vin/:vin', (req, res) => {
+  try {
+    const rec = getVinRecord(String(req.params.vin || ''))
+    if (!rec) return res.status(404).json({ ok: false, error: 'not found' })
+    res.json({ ok: true, record: rec })
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message || 'vin read error' })
+  }
+})
+
+app.post('/api/vin/:vin/options', (req, res) => {
+  const vin = String(req.params.vin || '').trim().toUpperCase()
+  const body = req.body || {}
+  // Accept flexible inputs: { blob: string } OR direct JSON payload with vin/options/totalMsrp
+  let blob = typeof (body as any).blob === 'string' ? String((body as any).blob) : ''
+  if (!blob) {
+    try {
+      if (body && typeof body === 'object' && (('options' in body) || ('totalMsrp' in body) || ('vin' in body))) {
+        blob = JSON.stringify(body)
+      } else if (typeof (body as any).text === 'string') {
+        blob = String((body as any).text)
+      }
+    } catch {}
+  }
+  if (!vin || !/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) {
+    return res.status(400).json({ ok: false, error: 'invalid VIN format' })
+  }
+  if (!blob || blob.trim().length === 0) {
+    return res.status(400).json({ ok: false, error: 'empty payload: paste JSON/HTML/TSV from VINAnalytics' })
+  }
+  if (blob.length > 2_000_000) {
+    return res.status(400).json({ ok: false, error: 'payload too large (>2 MB)' })
+  }
+  try {
+    const parsed = parseVinAnalyticsBlob(blob, vin)
+    const finalVin = (parsed?.vin || vin || '').toUpperCase()
+    const rec = upsertVinRecord(finalVin, blob, parsed)
+    try {
+      console.log('[x987-api] VIN upsert', finalVin, {
+        baseName: rec.parsed?.baseName,
+        model: rec.parsed?.model,
+        trim: rec.parsed?.trim,
+        derived: rec.derived?.modelTrimNormalized
+      })
+    } catch {}
+    res.json({ ok: true, record: rec })
+  } catch (e: any) {
+    res.status(400).json({ ok: false, error: e?.message || 'vin parse/upsert error' })
+  }
+})
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
