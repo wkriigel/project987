@@ -1,6 +1,7 @@
 import { Modal, Button, Typography, Input, Space, message } from 'antd'
 import { CopyOutlined } from '@ant-design/icons'
 import { useMemo } from 'react'
+import { makeVaBookmarklet } from '../lib/bookmarklet'
 
 const { Text } = Typography
 
@@ -10,7 +11,7 @@ export interface BookmarkletModalProps {
 }
 
 export function BookmarkletModal({ open, onClose }: BookmarkletModalProps) {
-  const code = useMemo(() => makeBookmarklet(), [])
+  const code = useMemo(() => makeVaBookmarklet('/ingest.html'), [])
 
   const copy = async () => {
     try {
@@ -25,16 +26,23 @@ export function BookmarkletModal({ open, onClose }: BookmarkletModalProps) {
     <Modal
       open={open}
       onCancel={onClose}
-      title="VINAnalytics Bookmarklet"
+      title="Import VIN Options Bookmarklet"
       footer={<Button onClick={onClose}>Close</Button>}
     >
       <Space direction="vertical" style={{ width: '100%' }} size="small">
-        <Text>
-          Drag a new bookmark to your bookmarks bar, edit it, and paste the code below as the URL. On a VINAnalytics car page, click the bookmark to auto‑save to this app (no paste needed). The tab will close automatically (browser permitting) and you’ll be back here.
-        </Text>
+        <Text>Suggested bookmark name: <strong>x987 Import VIN Options</strong></Text>
+        <div>
+          <ol style={{ paddingLeft: 18, margin: 0 }}>
+            <li>Drag a new bookmark to your bookmarks bar.</li>
+            <li>Edit it and paste the code below as the URL.</li>
+            <li>On a VINAnalytics vehicle page, click <em>x987 Import VIN Options</em>.</li>
+            <li>It opens a helper tab, auto‑saves VIN options to the app, and auto‑closes.</li>
+            <li>Back here, the table enriches that VIN with options/MSRP, etc.</li>
+          </ol>
+        </div>
         <Input.TextArea value={code} readOnly autoSize={{ minRows: 8, maxRows: 14 }} />
         <Button icon={<CopyOutlined />} onClick={copy}>Copy Bookmarklet</Button>
-        <Text type="secondary">Note: If VINAnalytics changes its layout, we can update this code here.</Text>
+        <Text type="secondary">Note: If VINAnalytics changes layout, update the bookmarklet here.</Text>
       </Space>
     </Modal>
   )
