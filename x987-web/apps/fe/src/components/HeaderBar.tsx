@@ -1,6 +1,6 @@
 import React from 'react'
-import { Layout, Space, Button, Tooltip } from 'antd'
-import { DownloadOutlined, BookOutlined } from '@ant-design/icons'
+import { Layout, Space, Button, Tooltip, Divider } from 'antd'
+import { DownloadOutlined, BookOutlined, PlusSquareOutlined, SearchOutlined } from '@ant-design/icons'
 import { roles } from '../design/tokens/roles'
 
 const { Header } = Layout
@@ -9,12 +9,16 @@ export function HeaderBar({
   title = 'x987',
   subtitle = 'Web',
   onExport,
-  onBookmarklet
+  onBookmarklet,
+  onBookmarkletFull,
+  onBookmarkletInspect
 }: {
   title?: string
   subtitle?: string
   onExport?: () => void
   onBookmarklet?: () => void
+  onBookmarkletFull?: () => void
+  onBookmarkletInspect?: () => void
 }) {
   return (
     <Header
@@ -28,20 +32,31 @@ export function HeaderBar({
         zIndex: 100
       }}
     >
-      <div className="max-w-7xl mx-auto w-full flex items-center justify-between px-3 h-14">
+      <div className="w-full flex items-center justify-between px-3 h-14">
         <div className="flex items-baseline gap-2 font-semibold tracking-tight">
           <span className="text-base">{title}</span>
           <span className="text-xs opacity-60">{subtitle}</span>
         </div>
-        <Space size="small">
+        <Space size="small" align="center">
           <Tooltip title="Export filtered rows as JSON">
             <Button size="small" icon={<DownloadOutlined />} onClick={onExport}>
               Export JSON
             </Button>
           </Tooltip>
-          <Tooltip title="Open bookmarklet helper">
+          <Divider type="vertical" style={{ height: 22, margin: '0 6px' }} />
+          <Tooltip title="Open Import VIN Options bookmarklet">
             <Button size="small" icon={<BookOutlined />} onClick={onBookmarklet}>
-              Bookmarklet
+              Import VIN Options
+            </Button>
+          </Tooltip>
+          <Tooltip title="Open Manual Add bookmarklet">
+            <Button size="small" icon={<PlusSquareOutlined />} onClick={onBookmarkletFull}>
+              Manual Add
+            </Button>
+          </Tooltip>
+          <Tooltip title="Open Inspect VIN bookmarklet">
+            <Button size="small" icon={<SearchOutlined />} onClick={onBookmarkletInspect}>
+              Inspect VIN
             </Button>
           </Tooltip>
         </Space>

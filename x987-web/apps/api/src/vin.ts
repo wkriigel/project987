@@ -18,6 +18,9 @@ export interface VinParsed {
   interior?: string
   baseName?: string
   modelTag?: string
+  listingUrl?: string
+  askingPriceUsd?: number | null
+  mileage?: number | null
 }
 
 export interface VinDerived {
@@ -76,11 +79,13 @@ export function upsertVinRecord(vin: string, raw: string, parsed: VinParsed): Vi
     normalizedOptions: normalizeOptions(options),
     modelTrimNormalized: computeModelTrimNormalized(parsed)
   }
+  // Prefer a user-provided listing URL if valid http(s); else fall back to VINAnalytics link
+  const candidateLink = safeHttpUrl((parsed as any).listingUrl) || ''
   const rec: VinRecord = {
     source: 'vinanalytics',
     vin: key,
     updatedAt: new Date().toISOString(),
-    link: `https://vinanalytics.com/car/${key}/`,
+    link: candidateLink || `https://vinanalytics.com/car/${key}/`,
     raw,
     parsed: {
       totalMsrp,
@@ -91,7 +96,10 @@ export function upsertVinRecord(vin: string, raw: string, parsed: VinParsed): Vi
       exterior: parsed.exterior,
       interior: parsed.interior,
       baseName: parsed.baseName,
-      modelTag: parsed.modelTag
+      modelTag: parsed.modelTag,
+      listingUrl: candidateLink || undefined,
+      askingPriceUsd: typeof parsed.askingPriceUsd === 'number' ? Math.trunc(parsed.askingPriceUsd) : (parsed.askingPriceUsd != null ? (toMoney(parsed.askingPriceUsd) || null) : undefined),
+      mileage: typeof parsed.mileage === 'number' ? Math.trunc(parsed.mileage) : (parsed.mileage != null ? (toInt(parsed.mileage) || null) : undefined)
     },
     derived
   }
@@ -230,6 +238,9 @@ export function parseVinAnalyticsBlob(blob: string, vinHint?: string): VinParsed
       const exterior = safeStr((obj as any).exterior)
       const interior = safeStr((obj as any).interior)
       const baseName = safeStr((obj as any).baseName)
+      const listingUrl = safeHttpUrl((obj as any).listingUrl) || undefined
+      const askingPriceUsd = toMoney((obj as any).askingPriceUsd ?? (obj as any).asking_price_usd ?? (obj as any).priceUsd ?? (obj as any).price)
+      const mileage = toInt((obj as any).mileage ?? (obj as any).miles)
       // Simplified: trust v-model (payload) for model/trim. Fallback to BASE if model is missing entirely.
       if (!model) {
         // Try deriving from modelTag (bookmarklet-provided raw label)
@@ -246,7 +257,7 @@ export function parseVinAnalyticsBlob(blob: string, vinHint?: string): VinParsed
           if (mt.model) { model = mt.model; trim = mt.trim }
         }
       }
-      return { vin, totalMsrp: total, options, year, model, trim, exterior, interior, baseName, modelTag }
+      return { vin, totalMsrp: total, options, year, model, trim, exterior, interior, baseName, modelTag, listingUrl, askingPriceUsd, mileage }
     }
   } catch {}
   // HTML path: look for <table
@@ -353,6 +364,16 @@ function toInt(v: any): number | null {
   if (typeof v === 'number' && Number.isFinite(v)) return Math.trunc(v)
   const n = Number(String(v).replace(/[^0-9.-]/g, ''))
   return Number.isFinite(n) ? Math.trunc(n) : null
+}
+
+function safeHttpUrl(v: any): string | null {
+  try {
+    const s = safeStr(v)
+    if (!s) return null
+    const u = new URL(s)
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.toString()
+    return null
+  } catch { return null }
 }
 
 function deriveModelTrimFromBase(baseName: string): { model: string; trim: string } {

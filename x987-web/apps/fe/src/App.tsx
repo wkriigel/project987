@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import type React from 'react'
 import type { MouseEvent } from 'react'
 import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented, Button, Tooltip } from 'antd'
-import { CopyOutlined, StarFilled, StarOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
+import { CopyOutlined, StarFilled, StarOutlined, SortAscendingOutlined, SortDescendingOutlined, AimOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import type { ColumnsType } from 'antd/es/table'
 import type { RankingRecord, RankingResponse } from './lib/types'
@@ -23,6 +23,8 @@ import { applyGenerationFilter } from './lib/filters'
 import type { GenerationValue } from './lib/filters'
 import { generationOptionsAll } from './lib/generation'
 import { BookmarkletModal } from './components/BookmarkletModal'
+import { BookmarkletModalFull } from './components/BookmarkletModalFull'
+import { BookmarkletModalInspect } from './components/BookmarkletModalInspect'
 
 const { Content } = Layout
 const { Text, Link } = Typography
@@ -40,6 +42,8 @@ export function App() {
   const [genCatalogStatus, setGenCatalogStatus] = useState<'idle'|'loading'|'ready'|'defaults'|'error'>('idle')
   const [vinMap, setVinMap] = useState<Record<string, any>>({})
   const [bmOpen, setBmOpen] = useState(false)
+  const [bmFullOpen, setBmFullOpen] = useState(false)
+  const [bmInspectOpen, setBmInspectOpen] = useState(false)
   const [tableFilters, setTableFilters] = useState<Record<string, any[] | null>>({})
   // Favorites (persisted across pipeline updates via localStorage)
   const FAV_STORE_KEY = 'x987_favorites_v1'
@@ -77,26 +81,30 @@ export function App() {
   }, [])
   // New filters
   const [body, setBody] = useState<'all'|'Boxster'|'Cayman'>('all')
+  const [completeness, setCompleteness] = useState<'any'|'incomplete'|'complete'>('any')
   const [maxPrice, setMaxPrice] = useState<number | null>(50000)
   const [sortState, setSortState] = useState<{ key?: string; order?: 'ascend' | 'descend' }>({})
   const [favOnly, setFavOnly] = useState<boolean>(false)
+  const [candidatesOnly, setCandidatesOnly] = useState<boolean>(false)
 
   // Facets reflect VIN-enriched data and current filters (top + column)
+  const baseRows = useMemo(() => mergeDataWithVinExtras(data, vinMap), [data, vinMap])
+
   const optionFacets = useMemo(() => {
-    const base = applyTopLevelFilters(data, generation, body, maxPrice, vinMap)
+    const base = applyTopLevelFilters(baseRows, generation, body, maxPrice, vinMap, completeness)
     const scoped = applyColumnFiltersToRows(base, tableFilters, vinMap)
     return optionFacetCountsEnriched(scoped, vinMap)
-  }, [data, generation, body, maxPrice, vinMap, tableFilters])
+  }, [baseRows, generation, body, maxPrice, completeness, vinMap, tableFilters])
   const exteriorFacets = useMemo(() => {
-    const base = applyTopLevelFilters(data, generation, body, maxPrice, vinMap)
+    const base = applyTopLevelFilters(baseRows, generation, body, maxPrice, vinMap, completeness)
     const scoped = applyColumnFiltersToRows(base, tableFilters, vinMap)
     return paintFacetCountsEnriched('exterior', scoped, vinMap)
-  }, [data, generation, body, maxPrice, vinMap, tableFilters])
+  }, [baseRows, generation, body, maxPrice, completeness, vinMap, tableFilters])
   const interiorFacets = useMemo(() => {
-    const base = applyTopLevelFilters(data, generation, body, maxPrice, vinMap)
+    const base = applyTopLevelFilters(baseRows, generation, body, maxPrice, vinMap, completeness)
     const scoped = applyColumnFiltersToRows(base, tableFilters, vinMap)
     return paintFacetCountsEnriched('interior', scoped, vinMap)
-  }, [data, generation, body, maxPrice, vinMap, tableFilters])
+  }, [baseRows, generation, body, maxPrice, completeness, vinMap, tableFilters])
 
   useEffect(() => {
     let mounted = true
@@ -786,16 +794,21 @@ export function App() {
       title: 'Source',
       key: 'src',
       render: (_, r) => {
-        const url = r.listing_url || r.source_url
-        const host = shortHost(url)
-        return url ? <a href={url} target="_blank" rel="noreferrer">{host}</a> : ''
+        try {
+          const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
+          const enriched = vin ? vinMap[vin] : null
+          const pref = String(enriched?.parsed?.listingUrl || '').trim()
+          const url = pref || String((r as any).listing_url || (r as any).source_url || enriched?.link || '')
+          const host = shortHost(url)
+          return url ? <a href={url} target="_blank" rel="noreferrer">{host}</a> : ''
+        } catch { return '' }
       }
     }
   ], [optionFacets, vinMap, sortState, favorites])
 
   const filtered = useMemo(() => {
-    // Apply generation filter first
-    let rows = applyGenerationFilter(data, generation)
+    // Apply generation filter first (on merged base rows)
+    let rows = applyGenerationFilter(baseRows, generation)
     // Apply body filter (Cab/Coupe): All / Boxster / Cayman
     if (body !== 'all') {
       const target = body.toLowerCase()
@@ -808,11 +821,22 @@ export function App() {
         } catch { return false }
       })
     }
-    // Apply max price filter (asking_price_usd)
+    // Apply quick candidates filter (price<45k, miles<100k, trim has 'S' token, options include Chrono)
+    if (candidatesOnly) {
+      rows = rows.filter((r: any) => isCandidateRecord(r, vinMap))
+    }
+    // Apply completeness filter
+    if (completeness !== 'any') {
+      rows = rows.filter((r: any) => {
+        const ok = isRecordComplete(r, vinMap)
+        return completeness === 'complete' ? ok : !ok
+      })
+    }
+    // Apply max price filter (asking_price_usd). Keep rows with unknown price.
     if (maxPrice != null) {
       rows = rows.filter((r: any) => {
         const p = toInt((r as any).asking_price_usd)
-        return p != null && p <= maxPrice
+        return p == null ? true : p <= maxPrice
       })
     }
     // Apply favorites filter
@@ -841,7 +865,7 @@ export function App() {
       })
     }
     return rows
-  }, [data, generation, body, maxPrice, vinMap, favOnly, favorites])
+  }, [baseRows, generation, body, completeness, maxPrice, vinMap, favOnly, candidatesOnly, favorites])
   
   const sorted = useMemo(() => {
     const rows = [...filtered]
@@ -1017,6 +1041,17 @@ export function App() {
                   ...Array.from({ length: 10 }, (_, i) => (i + 1) * 10000).map(v => ({ label: `$${(v/1000)}k`, value: v }))
                 ]}
               />
+              <FilterSelect
+                label="Data Completeness"
+                value={completeness}
+                onChange={(v) => setCompleteness(String(v) as any)}
+                className="w-full sm:w-[220px]"
+                options={[
+                  { label: 'Any', value: 'any' },
+                  { label: 'Incomplete', value: 'incomplete' },
+                  { label: 'Complete', value: 'complete' }
+                ]}
+              />
               <Button
                 onClick={() => setSortState({ key: 'msrp', order: 'descend' })}
                 icon={<SortDescendingOutlined />}
@@ -1024,7 +1059,10 @@ export function App() {
                 MSRP
               </Button>
               <Button type={favOnly ? 'primary' : 'default'} onClick={() => setFavOnly(v => !v)} icon={favOnly ? <StarFilled /> : <StarOutlined />}>
-                Favorites Only
+                Favorites
+              </Button>
+              <Button type={candidatesOnly ? 'primary' : 'default'} onClick={() => setCandidatesOnly(v => !v)} icon={<AimOutlined />}>
+                Candidates
               </Button>
             </div>
 
@@ -1040,7 +1078,7 @@ export function App() {
                   `${toInt(r.year) || 0}-${normalizeModelTrim(((r.model || '') + ' ' + (r.trim || '')).trim()) || ''}-${toInt(r.asking_price_usd) || 0}-${toInt(r.mileage) || 0}`
                 )}
                 columns={columns}
-                dataSource={sorted.filter(r => toInt(r.year) != null)}
+                dataSource={sorted}
                 rowClassName={(r) => {
                   try {
                     const vin = String((r as any).vin || (r as any).VIN || '').trim().toUpperCase()
@@ -1230,6 +1268,8 @@ export function App() {
           subtitle="Web"
           onExport={handleExportFilteredJson}
           onBookmarklet={() => setBmOpen(true)}
+          onBookmarkletFull={() => setBmFullOpen(true)}
+          onBookmarkletInspect={() => setBmInspectOpen(true)}
         />
         <Content style={{ background: roles.bg.surface as string }}>
           <Tabs
@@ -1242,6 +1282,8 @@ export function App() {
         </Content>
       </Layout>
       <BookmarkletModal open={bmOpen} onClose={() => setBmOpen(false)} />
+      <BookmarkletModalFull open={bmFullOpen} onClose={() => setBmFullOpen(false)} />
+      <BookmarkletModalInspect open={bmInspectOpen} onClose={() => setBmInspectOpen(false)} />
     </ConfigProvider>
   )
 }
@@ -1278,7 +1320,8 @@ function applyTopLevelFilters(
   generation: any,
   body: 'all'|'Boxster'|'Cayman',
   maxPrice: number | null,
-  vinMap: Record<string, any>
+  vinMap: Record<string, any>,
+  completeness: 'any'|'incomplete'|'complete' = 'any'
 ): any[] {
   try {
     let rows = applyGenerationFilter(data, generation)
@@ -1293,10 +1336,16 @@ function applyTopLevelFilters(
         } catch { return false }
       })
     }
+    if (completeness !== 'any') {
+      rows = rows.filter((r: any) => {
+        const ok = isRecordComplete(r, vinMap)
+        return completeness === 'complete' ? ok : !ok
+      })
+    }
     if (maxPrice != null) {
       rows = rows.filter((r: any) => {
         const p = toInt((r as any).asking_price_usd)
-        return p != null && p <= maxPrice
+        return p == null ? true : p <= maxPrice
       })
     }
     return rows
@@ -1516,4 +1565,98 @@ function renderEnrichedOptions(enriched: any): React.ReactNode {
       </span>
     )
   } catch { return '' }
+}
+
+// Quick-candidate filter: price < $45k, miles < 100k, trim contains standalone 'S', and options include Chrono
+function isCandidateRecord(rec: any, vinMap: Record<string, any>): boolean {
+  try {
+    const price = toInt((rec as any).asking_price_usd)
+    if (price == null || price >= 45000) return false
+    const miles = toInt((rec as any).mileage)
+    if (miles == null || miles >= 100000) return false
+    const vin = String((rec?.vin || rec?.VIN || '')).trim().toUpperCase()
+    const enriched = vin ? vinMap[vin] : null
+    const mt = computeModelTrimLabel(rec, enriched)
+    if (!/\bS\b/i.test(mt)) return false
+    const tags: Set<string> = (() => {
+      if (enriched) {
+        const arr: any[] = Array.isArray(enriched?.derived?.normalizedOptions) ? enriched.derived.normalizedOptions : []
+        return new Set<string>(arr.filter((v) => typeof v === 'string' && v.trim()))
+      }
+      return tagsForRecord(rec as any)
+    })()
+    if (!Array.from(tags).some(t => String(t).toLowerCase() === 'chrono')) return false
+    return true
+  } catch { return false }
+}
+
+// Preferred URL shown in the Source column (matches render logic)
+function preferredSourceUrl(rec: any, vinMap: Record<string, any>): string {
+  try {
+    const vin = String((rec?.vin || rec?.VIN || '')).trim().toUpperCase()
+    const enriched = vin ? vinMap[vin] : null
+    const pref = String(enriched?.parsed?.listingUrl || '').trim()
+    const url = pref || String((rec as any).listing_url || (rec as any).source_url || enriched?.link || '')
+    return url
+  } catch { return '' }
+}
+
+function isRecordComplete(rec: any, vinMap: Record<string, any>): boolean {
+  try {
+    const vin = String((rec?.vin || rec?.VIN || '')).trim().toUpperCase()
+    if (!vin) return false
+    const enriched = vin ? vinMap[vin] : null
+    const year = (() => {
+      try { return enriched?.parsed?.year != null ? toInt(enriched.parsed.year) : toInt(rec.year) } catch { return toInt(rec.year) }
+    })()
+    if (year == null) return false
+    const price = toInt((rec as any).asking_price_usd)
+    if (price == null) return false
+    const url = preferredSourceUrl(rec, vinMap)
+    const host = shortHost(url)
+    if (!host) return false
+    if (host === 'vinanalytics.com') return false
+    return true
+  } catch { return false }
+}
+
+// Merge pipeline data with extra rows derived solely from VIN-enriched records
+// Adds a synthetic row for any VIN present in vinMap but absent from data.
+function mergeDataWithVinExtras(data: any[], vinMap: Record<string, any>): any[] {
+  try {
+    const base = Array.isArray(data) ? data : []
+    const presentVins = new Set<string>()
+    for (const r of base) {
+      try {
+        const v = String((r?.vin || r?.VIN || '')).trim().toUpperCase()
+        if (v) presentVins.add(v)
+      } catch { /* ignore */ }
+    }
+    const extras: any[] = []
+    for (const [vinKey, rec] of Object.entries(vinMap || {})) {
+      const v = String(vinKey || '').trim().toUpperCase()
+      if (!v || presentVins.has(v)) continue
+      const p = rec && rec.parsed ? rec.parsed : {}
+      // Prefer user-provided listing URL; else fallback to enriched link
+      const listingUrl = String((p as any)?.listingUrl || rec?.link || '').trim()
+      // Construct a minimal row compatible with RankingRecord
+      const row: any = {
+        vin: v,
+        year: (p?.year != null ? String(p.year) : undefined),
+        model: String(p?.model || ''),
+        trim: String(p?.trim || ''),
+        asking_price_usd: (p?.askingPriceUsd != null ? String(p.askingPriceUsd) : undefined),
+        mileage: (p?.mileage != null ? String(p.mileage) : undefined),
+        total_options_msrp: (p?.totalMsrp != null ? String(p.totalMsrp) : undefined),
+        options_list: undefined,
+        exterior: String(p?.exterior || ''),
+        interior: String(p?.interior || ''),
+        listing_url: listingUrl || undefined
+      }
+      extras.push(row)
+    }
+    return base.concat(extras)
+  } catch {
+    return Array.isArray(data) ? data : []
+  }
 }
