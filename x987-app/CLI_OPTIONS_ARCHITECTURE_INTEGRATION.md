@@ -80,13 +80,11 @@ Modified `x987/cli.py` to use our new modular pipeline instead of old hardcoded 
 # Old hardcoded functions
 from x987.pipeline.transform import run_transform
 from x987.pipeline.dedupe import run_deduplication
-from x987.pipeline.fairvalue import run_fair_value
 from x987.pipeline.rank import run_ranking
 
 # Old pipeline execution
 normalized_data = run_transform(scraped_data)
 deduplicated_data = run_deduplication(normalized_data)
-valued_data = run_fair_value(deduplicated_data, config)
 ranked_data = run_ranking(valued_data)
 ```
 
@@ -99,7 +97,6 @@ from x987.pipeline.steps import get_pipeline_runner
 runner = get_pipeline_runner()
 transform_result = runner.run_single_step("transformation", transform_config)
 dedup_result = runner.run_single_step("deduplication", dedup_config)
-fairvalue_result = runner.run_single_step("fair_value", fairvalue_config)
 ranking_result = runner.run_single_step("ranking", ranking_config)
 ```
 
@@ -177,16 +174,14 @@ The integration has been tested and verified:
 
 ### 1. **Test Individual Commands**
 ```bash
-python -m x987.cli transform
-python -m x987.cli dedupe
-python -m x987.cli fairvalue
-python -m x987.cli rank
+python -m x987 transform
+python -m x987 dedupe
+python -m x987 rank
 ```
 
 ### 2. **Test Full Pipeline**
 ```bash
-python -m x987.cli csv --input-dir x987-data/manual
-python -m x987.cli run --test-mode
+python -m x987 pipeline --headful
 ```
 
 ### 3. **Test Options Architecture**

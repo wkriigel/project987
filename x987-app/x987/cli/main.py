@@ -172,35 +172,7 @@ def cmd_dedupe(args):
         logger.error(f"Deduplication error: {e}")
         return 1
 
-def cmd_fair_value(args):
-    """Run fair value calculation step"""
-    print("💰 Running fair value calculation step...")
-    logger.info("Running fair value calculation step...")
-    try:
-        config = get_config()
-        print(f"📁 Config file: {config.config_file}")
-        
-        # Get pipeline runner
-        runner = get_pipeline_runner()
-        
-        # Run just the fair value step
-        result = runner.run_single_step("fair_value", config, verbose=args.verbose)
-        
-        if result.is_success:
-            results = result.data
-            print(f"✅ Fair value calculation completed: {len(results)} results")
-            print(f"📊 Output: {len(results)} vehicles with calculated fair values")
-            logger.info(f"Fair value calculation completed: {len(results)} results")
-            return 0
-        else:
-            print(f"❌ Fair value calculation failed: {result.error}")
-            logger.error(f"Fair value calculation failed: {result.error}")
-            return 1
-            
-    except Exception as e:
-        print(f"❌ Fair value calculation error: {e}")
-        logger.error(f"Fair value calculation error: {e}")
-        return 1
+## Fair value command removed (MSRP-only pipeline)
 
 def cmd_rank(args):
     """Run ranking step"""
@@ -219,7 +191,7 @@ def cmd_rank(args):
         if result.is_success:
             results = result.data
             print(f"✅ Ranking completed: {len(results)} results")
-            print(f"📊 Output: {len(results)} vehicles ranked by deal quality")
+            print(f"📊 Output: {len(results)} vehicles ranked by options MSRP total")
             logger.info(f"Ranking completed: {len(results)} results")
             return 0
         else:
@@ -368,7 +340,6 @@ def cmd_transform_step(args):
         from ..pipeline.steps.base import StepResult, StepStatus
         from ..pipeline.steps.transformation import TRANSFORMATION_STEP
         from ..pipeline.steps.deduplication import DEDUPLICATION_STEP
-        from ..pipeline.steps.fair_value import FAIR_VALUE_STEP
         from ..pipeline.steps.ranking import RANKING_STEP
         from ..pipeline.steps.view import VIEW_STEP
         from ..config import get_config
@@ -376,7 +347,7 @@ def cmd_transform_step(args):
         from pathlib import Path
         import glob, csv, sys
 
-        # Resolve config dict (ensure required keys for steps like 'pipeline' and 'fair_value')
+        # Resolve config dict (ensure required keys for steps like 'pipeline')
         cfg = get_config()
         config = cfg.config if hasattr(cfg, 'config') else cfg
 
@@ -431,11 +402,8 @@ def cmd_transform_step(args):
             'scraping_data': scraping_data
         }
 
-        # Execute transformation forward (pricing-mode aware)
-        from ..config import get_config as _get_cfg
-        pmode = _get_cfg().get_pricing_mode() if hasattr(_get_cfg(), 'get_pricing_mode') else 'msrp_only'
-        pipeline_str = "transformation → deduplication → ranking → view" if pmode == 'msrp_only' else "transformation → deduplication → fair_value → ranking → view"
-        print(f"\n🔄 Executing: {pipeline_str}")
+        # Execute transformation forward (MSRP-only pipeline)
+        print("\n🔄 Executing: transformation → deduplication → ranking → view")
         tr_result = TRANSFORMATION_STEP.execute(config, prev)
         if not tr_result or not tr_result.is_success:
             print(f"❌ Transformation failed: {tr_result.error if tr_result else 'unknown error'}")
@@ -448,14 +416,6 @@ def cmd_transform_step(args):
             print(f"❌ Deduplication failed: {dd_result.error if dd_result else 'unknown error'}")
             return 1
         prev['deduplication'] = dd_result
-
-        # Execute fair_value only if not MSRP-only mode
-        if pmode != 'msrp_only':
-            fv_result = FAIR_VALUE_STEP.execute(config, prev)
-            if not fv_result or not fv_result.is_success:
-                print(f"❌ Fair value failed: {fv_result.error if fv_result else 'unknown error'}")
-                return 1
-            prev['fair_value'] = fv_result
 
         # Execute ranking
         rk_result = RANKING_STEP.execute(config, prev)
@@ -519,8 +479,7 @@ def cmd_config(args):
         print(f"🔍 Search URLs: {summary['search_urls_count']}")
         print(f"🕷️  Scraping concurrency: {summary['scraping_concurrency']}")
         print(f"⏱️  Polite delay: {summary['scraping_polite_delay_ms']}ms")
-        if str(summary.get('pricing_mode', 'msrp_only')).lower() != 'msrp_only' and summary.get('fair_value_base') is not None:
-            print(f"💰 Fair value base: ${summary['fair_value_base']:,}")
+        # Fair value removed in MSRP-only pipeline
         print(f"🔧 Options enabled: {summary['options_enabled']}")
         
         return 0

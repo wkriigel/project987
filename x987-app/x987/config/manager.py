@@ -123,7 +123,10 @@ class ConfigManager:
     
 
     def get_options_config(self) -> Dict[str, Any]:
-        """Get options configuration"""
+        """Get options configuration, preferring 'options' over legacy 'options_v2'."""
+        opts = self.get('options', None)
+        if isinstance(opts, dict):
+            return opts
         return self.get('options_v2', {})
 
     def get_pricing_mode(self) -> str:
@@ -149,7 +152,7 @@ class ConfigManager:
             'search_urls_count': len(self.get_search_urls()),
             'scraping_concurrency': self.get('scraping.concurrency'),
             'scraping_polite_delay_ms': self.get('scraping.polite_delay_ms'),
-            'options_enabled': self.get('options_v2.enabled')
+            'options_enabled': (self.get('options.enabled') if self.get('options', None) is not None else self.get('options_v2.enabled'))
         }
 
 # Global configuration instance

@@ -18,12 +18,11 @@ graph TD
     E --> H[cmd_scrape]
     E --> I[cmd_transform]
     E --> J[cmd_dedupe]
-    E --> K[cmd_fair_value]
-    E --> L[cmd_rank]
-    E --> M[cmd_view_step]
-    E --> N[cmd_info]
-    E --> O[cmd_config]
-    E --> P[cmd_doctor]
+    E --> K[cmd_rank]
+    E --> L[cmd_view_step]
+    E --> M[cmd_info]
+    E --> N[cmd_config]
+    E --> O[cmd_doctor]
     
     F --> Q[x987.pipeline:get_pipeline_runner]
     Q --> R[runner.run_pipeline]
@@ -41,12 +40,9 @@ graph TD
     Y --> Z[runner.run_single_step:deduplication]
     
     K --> AA[x987.pipeline:get_pipeline_runner]
-    AA --> BB[runner.run_single_step:fair_value]
+    AA --> BB[runner.run_single_step:ranking]
     
-    L --> CC[x987.pipeline:get_pipeline_runner]
-    CC --> DD[runner.run_single_step:ranking]
-    
-    M --> EE[x987.pipeline.steps.view:VIEW_STEP]
+    L --> EE[x987.pipeline.steps.view:VIEW_STEP]
     
     N --> GG[x987.pipeline:get_pipeline_runner]
     GG --> HH[runner.get_pipeline_info]
@@ -69,7 +65,6 @@ graph TD
 - **`scrape`**: Runs only scraping step  
 - **`transform`**: Runs only transformation step
 - **`dedupe`**: Runs only deduplication step
-- **`fair_value`**: Runs only fair value calculation
 - **`rank`**: Runs only ranking step
 
 ### Utility Commands

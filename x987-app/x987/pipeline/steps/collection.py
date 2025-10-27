@@ -18,7 +18,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from .base import BasePipelineStep, StepResult
-from ..seen_registry import SeenRegistry, canonicalize_url
+from ..seen_registry import canonicalize_url
 from ...db.integration import record_collection, is_sqlite_enabled
 from ...db.core import get_connection as db_get_connection, ensure_db as db_ensure_db
 from ...db.api import seen_is_seen as db_seen_is_seen, seen_get_first_seen as db_seen_get_first_seen, seen_mark_seen as db_seen_mark_seen
@@ -444,53 +444,30 @@ class CollectionStep(BasePipelineStep):
 
     def _annotate_new_flags(self, processed_urls: List[Dict[str, Any]], config: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Annotate each processed URL with is_new/first_seen_at using a persistent registry."""
-        # Determine registry file location adjacent to output directory
-        output_dir = Path(config.get('pipeline', {}).get('output_directory', 'x987-data/results'))
-        registry_dir = output_dir.parent if output_dir.name == 'results' else output_dir.parent
-        registry_path = registry_dir / 'seen_registry.json'
-
         now_iso = datetime.now().isoformat()
-
-        if is_sqlite_enabled(config):
-            # Use DB-backed registry
+        # Enforce SQLite-backed registry only
+        if not is_sqlite_enabled(config):
+            raise ValueError("SQLite storage is required for seen registry. Set storage.mode = 'sqlite'.")
+        try:
+            db_ensure_db(config)
+            conn = db_get_connection(config)
             try:
-                db_ensure_db(config)
-                conn = db_get_connection(config)
-                try:
-                    for row in processed_urls:
-                        raw_url = row.get('listing_url', '') or ''
-                        canon = canonicalize_url(raw_url)
-                        row['canonical_url'] = canon
-                        if db_seen_is_seen(conn, canon):
-                            row['is_new'] = False
-                            row['first_seen_at'] = db_seen_get_first_seen(conn, canon) or ''
-                        else:
-                            row['is_new'] = True
-                            row['first_seen_at'] = now_iso
-                        db_seen_mark_seen(conn, canon, now_iso=now_iso)
-                finally:
-                    conn.close()
-            except Exception as e:
-                print(f"       ⚠️  DB seen-registry update failed, falling back to JSON: {e}")
-        else:
-            # Legacy JSON-backed registry
-            registry = SeenRegistry(registry_path)
-            for row in processed_urls:
-                raw_url = row.get('listing_url', '') or ''
-                canon = canonicalize_url(raw_url)
-                row['canonical_url'] = canon
-                if registry.is_seen(canon):
-                    row['is_new'] = False
-                    row['first_seen_at'] = registry.get_first_seen(canon) or ''
-                else:
-                    row['is_new'] = True
-                    row['first_seen_at'] = now_iso
-                registry.mark_seen(canon, now_iso=now_iso)
-            try:
-                registry.save()
-                print(f"       ✅ Updated seen registry: {registry_path}")
-            except Exception as e:
-                print(f"       ⚠️  Failed to update seen registry: {e}")
+                for row in processed_urls:
+                    raw_url = row.get('listing_url', '') or ''
+                    canon = canonicalize_url(raw_url)
+                    row['canonical_url'] = canon
+                    if db_seen_is_seen(conn, canon):
+                        row['is_new'] = False
+                        row['first_seen_at'] = db_seen_get_first_seen(conn, canon) or ''
+                    else:
+                        row['is_new'] = True
+                        row['first_seen_at'] = now_iso
+                    db_seen_mark_seen(conn, canon, now_iso=now_iso)
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"       ❌ DB seen-registry update failed: {e}")
+            raise
 
         return processed_urls
     

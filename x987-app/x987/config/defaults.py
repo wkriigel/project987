@@ -11,7 +11,6 @@ RISK: Low - defaults can be overridden by user config
 
 # Default configuration values
 DEFAULT_CONFIG = {
-    "pricing_mode": "msrp_only",  # pricing modes: 'msrp_only' | 'current'
     "storage": {
         # Storage backend: 'sqlite' (preferred) or 'files' (legacy)
         "mode": "sqlite",
@@ -38,7 +37,7 @@ DEFAULT_CONFIG = {
         "headful": True,  # Use headful mode for browser automation
         "timeout_seconds": 30
     },
-    "options_v2": {
+    "options": {
         "enabled": True,
         "confidence_threshold": 0.7,
         "max_options_display": 100  # Show all options, no "+n more"
