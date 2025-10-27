@@ -515,8 +515,8 @@ class TransformationStep(BasePipelineStep):
                     
                     # Options summary
                     'total_options': options.get('total_options', 0),
-                    # Write legacy field as blank when pricing_mode is msrp_only
-                    'total_options_value': '' if str(config.get('pricing_mode', 'msrp_only')).lower() == 'msrp_only' else options.get('total_options_value', 0),
+                    # Legacy field removed in MSRP-only pipeline (always blank)
+                    'total_options_value': '',
                     'total_options_msrp': options.get('total_options_msrp', 0),
                     'options_categories': ', '.join(options.get('options_by_category', {}).keys()),
                     'options_list': ', '.join([opt.get('display', '') for opt in options.get('detected_options', [])])
@@ -571,7 +571,7 @@ class TransformationStep(BasePipelineStep):
             'source': properties.get('source', ''),
             'source_confidence': properties.get('source_confidence', ''),
             'total_options': options.get('total_options', 0),
-            'total_options_value': '' if str(config.get('pricing_mode', 'msrp_only')).lower() == 'msrp_only' else options.get('total_options_value', 0),
+            'total_options_value': '',
             'total_options_msrp': options.get('total_options_msrp', 0),
             'options_categories': ', '.join(options.get('options_by_category', {}).keys()),
             'options_list': ', '.join([opt.get('display', '') for opt in options.get('detected_options', [])])

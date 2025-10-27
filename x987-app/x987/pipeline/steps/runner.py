@@ -80,8 +80,6 @@ class PipelineRunner:
                     summary = f"processed {data.get('total_listings', 0)}"
                 elif step_name == "deduplication":
                     summary = f"retained {data.get('final_count', 0)}/{data.get('original_count', 0)} (removed {data.get('duplicates_removed', 0)})"
-                elif step_name == "fair_value":
-                    summary = f"skipped (MSRP-only)"
                 elif step_name == "ranking":
                     stats = data.get('ranking_stats', {}) if isinstance(data, dict) else {}
                     summary = f"ranked {data.get('total_listings', stats.get('total_listings', 0))}"

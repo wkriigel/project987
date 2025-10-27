@@ -31,9 +31,12 @@ def validate_config(config: Dict[str, Any]) -> None:
         _validate_search_section(config.get('search', {}))
         _validate_scraping_section(config.get('scraping', {}))
         _validate_storage_section(config.get('storage', {}))
-        # Fair value configuration removed in MSRP-only cleanup
-        _validate_pricing_mode(config.get('pricing_mode', 'msrp_only'))
-        _validate_options_section(config.get('options_v2', {}))
+        # Fair value configuration removed in MSRP-only pipeline (no pricing_mode validation)
+        # Validate either new 'options' or legacy 'options_v2' section
+        if 'options' in config:
+            _validate_options_section(config.get('options', {}))
+        elif 'options_v2' in config:
+            _validate_options_section(config.get('options_v2', {}))
         _validate_pipeline_section(config.get('pipeline', {}))
         _validate_vehicles_section(config.get('vehicles', {}))
         _validate_options_per_generation(config.get('options_per_generation', {}))
@@ -111,8 +114,8 @@ def _validate_storage_section(storage_config: Dict[str, Any]) -> None:
     if not isinstance(storage_config, dict):
         raise ConfigError("Storage configuration must be a table (dict)")
     mode = storage_config.get('mode', 'sqlite')
-    if mode not in ('sqlite', 'files'):
-        raise ConfigError("Storage mode must be 'sqlite' or 'files'")
+    if mode != 'sqlite':
+        raise ConfigError("Storage mode must be 'sqlite'")
     if mode == 'sqlite':
         db_path = storage_config.get('db_path')
         if db_path is not None and not isinstance(db_path, str):

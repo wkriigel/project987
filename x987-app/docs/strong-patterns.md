@@ -115,14 +115,8 @@ concurrency = 3
 polite_delay_ms = 1000
 headful = true
 
-[fair_value]
-base_value_usd = 30500
-year_step_usd = 500
-s_premium_usd = 7000
-
 # Environment override
 export X987_SCRAPING_CONCURRENCY=5
-export X987_FAIR_VALUE_BASE_VALUE_USD=32000
 ```
 
 **Recommendation**: **STANDARDIZE** - Use configuration-driven design for all configurable behavior.

@@ -73,7 +73,7 @@ The system successfully discovered and tested all 7 extractors:
 - **Model+Trim**: Cayman S ✓
 - **Colors**: Arctic Silver Metallic / Black Leather ✓
 - **Source**: Cars.com ✓
-- **Deal Delta**: +$2,500 (calculated) ✓
+<!-- Deal Delta removed in MSRP-only mode -->
 
 ## Benefits Achieved
 
@@ -111,7 +111,7 @@ x987-app/x987/extractors/
 ├── model_trim.py            # Model+Trim extraction
 ├── colors.py                # Color extraction
 ├── source.py                # Source extraction
-├── deal.py                  # Deal delta calculation
+<!-- deal.py removed in MSRP-only mode -->
 └── README.md                # Documentation
 ```
 

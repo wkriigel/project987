@@ -13,7 +13,7 @@ The v4.5 codebase implements a **modular pipeline architecture** for vehicle dat
 
 ### Key Considerations 🚀
 - Maintain selector resilience; treat scrapers as replaceable profiles
-- Monitor fair value parameters and adjust based on market movement
+- MSRP-only pipeline: fair value/deal delta removed (no parameters to tune)
 - Keep headful scraping behavior by default (configurable via CLI)
 
 ## High-Level Architecture
@@ -37,7 +37,6 @@ graph TB
         H[Scraping]
         I[Transformation]
         J[Deduplication]
-        K[Fair Value]
         L[Ranking]
         M[View]
     end
@@ -87,11 +86,8 @@ graph TB
 - **Coverage**: Year, price, mileage, model, colors, options
 - **Quality**: Confidence scoring and validation
 
-### 4. ✅ Fair Value Ranking
-- **Status**: Implemented with configurable model
-- **Method**: Base value + adjustments (year, model, mileage, colors)
-- **Coverage**: Deal delta calculation and quality assessment
-- **Quality**: Transparent calculation with metadata
+### 4. ❎ Fair Value Ranking (Removed)
+MSRP-only: pipeline ranks by total options MSRP; fair value/deal delta removed.
 
 ### 5. ✅ Table View Presentation
 - **Status**: Rich library-based display
@@ -185,14 +181,12 @@ graph TB
 }
 ```
 
-#### Fair Value → Ranking
+#### Ranking
 ```python
 # Input: List[Dict[str, Any]]
 {
-    'fair_value_usd': float,
-    'deal_delta_usd': float,
-    'deal_quality': str,
-    'fair_value_calculation': Dict[str, Any]
+    'total_options_msrp': int,
+    'options_by_category': Dict[str, Any]
 }
 ```
 

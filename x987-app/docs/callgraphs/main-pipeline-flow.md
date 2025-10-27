@@ -20,9 +20,8 @@ graph TD
     I --> J[Scraping Step]
     J --> K[Transformation Step]
     K --> L[Deduplication Step]
-    L --> M[Fair Value Step]
-    M --> N[Ranking Step]
-    N --> O[View Step]
+    L --> M[Ranking Step]
+    M --> N[View Step]
     
     I --> P[AutoTempest URL Collection]
     P --> Q[Playwright Browser Automation]
@@ -40,13 +39,10 @@ graph TD
     
     L --> Z[Deduplication Logic]
     
-    M --> AA[Fair Value Calculation]
-    AA --> BB[Deal Delta Analysis]
+    M --> O[View Step]
     
-    N --> CC[Ranking by Deal Quality]
-    
-    O --> DD[Rich Library Display]
-    DD --> EE[Final Report Output]
+    O --> P[Rich Library Display]
+    P --> Q[Final Report Output]
 ```
 
 ## Data Flow Contracts
@@ -66,15 +62,10 @@ graph TD
 - **Output**: Normalized data with quality scores
 - **Data Structure**: `List[Dict[str, Any]]` with keys: `year`, `price`, `mileage`, `model_trim`, `options_list`
 
-### Deduplication → Fair Value
+### Deduplication → Ranking
 - **Input**: Deduplicated vehicle listings
-- **Output**: Vehicle listings with fair value calculations
-- **Data Structure**: `List[Dict[str, Any]]` with keys: `fair_value_usd`, `deal_delta_usd`
-
-### Fair Value → Ranking
-- **Input**: Vehicle listings with fair values and deal deltas
-- **Output**: Ranked vehicle listings by deal quality
-- **Data Structure**: `List[Dict[str, Any]]` with keys: `deal_quality`, `ranking_score`
+- **Output**: Ranked vehicle listings by total options MSRP
+- **Data Structure**: `List[Dict[str, Any]]` with keys: `total_options_msrp`, `options_by_category`
 
 ### Ranking → View
 - **Input**: Ranked vehicle listings

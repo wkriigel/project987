@@ -64,9 +64,7 @@ urls = [
 ```
 
 ### Pricing Mode
-```toml
-pricing_mode = "msrp_only"  # or "current" for legacy behavior
-```
+MSRP-only pipeline is always active; fair value/deal calculations are removed.
 
 ### Scraping Settings
 ```toml
@@ -92,7 +90,6 @@ python -m x987 collect      # Collect URLs
 python -m x987 scrape       # Scrape vehicles
 python -m x987 transform    # Normalize data
 python -m x987 dedupe       # Remove duplicates
-python -m x987 fairvalue    # No-op in MSRP-only mode
 python -m x987 rank         # Rank by Options MSRP total
 
 # Display final ranked view from latest results
@@ -107,7 +104,7 @@ python -m x987 --help
 
 ### Output
 
-The application generates several output files in the `x987-data` directory:
+The application generates several output files in the `x987-data` directory (CSV export can be disabled globally):
 
 - **Raw data**: Timestamped CSV files from scraping
 - **Normalized data**: Processed and cleaned listings
@@ -161,7 +158,7 @@ x987-data/                   # Output data
 The system detects options using pattern matching and aggregates MSRP:
 
 - Per‑generation overrides from `[options_per_generation]` take precedence
-- Then falls back to `options_v2.msrp_catalog`
+- Then falls back to `options.msrp_catalog`
 - If unknown, a default MSRP of `494` is used
 
 ## Development

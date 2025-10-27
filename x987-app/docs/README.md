@@ -9,7 +9,7 @@ This directory contains the architecture and implementation documentation for Vi
 ### 📊 Core Documents
 
 - **[`architecture-audit.md`](architecture-audit.md)** - Architecture analysis and mission alignment verification
-- **[`loose-ends.md`](loose-ends.md)** - Remaining gaps and improvement opportunities
+<!-- loose-ends removed; content consolidated into audits -->
 - **[`strong-patterns.md`](strong-patterns.md)** - Standard patterns and improvement recommendations
 
 ### 📈 Call Graphs
@@ -47,7 +47,7 @@ Use [`strong-patterns.md`](strong-patterns.md) to identify patterns to standardi
 
 ### 🚨 **Notable Considerations**
 - Maintain selector accuracy as sites evolve
-- Keep fair value parameters aligned with market conditions
+- Monitor selector and site markup drift; adjust profiles promptly
 
 ### 📊 **Mission Alignment**
 - ✅ **AutoTempest ingestion** - Implemented with Playwright
@@ -82,8 +82,8 @@ CLI Layer → Pipeline Orchestration → Data Processing Pipeline → Supporting
     ↓              ↓                        ↓                      ↓
 Commands    Step Registry & Runner    Collection→Scraping→     Extractors
 Arguments   Dependency Resolution     Transformation→Dedupe→    Options
-Routing     Execution Management      Fair Value→Ranking→      Configuration
-                                    View                     Logging
+Routing     Execution Management      Ranking→View            Configuration
+                                                            Logging
 ```
 
 ## Data Flow
@@ -94,9 +94,8 @@ The pipeline processes data through these stages:
 2. **Scraping** - Listing URLs → vehicle details with validation
 3. **Transformation** - Raw data → extracted properties + options
 4. **Deduplication** - Transformed data → unique listings
-5. **Fair Value** - Unique listings → fair values + deal deltas
-6. **Ranking** - Fair value data → ranked by deal quality
-7. **View** - Ranked data → formatted reports and displays
+5. **Ranking** - Deduped data → ranked by total options MSRP
+6. **View** - Ranked data → formatted reports and displays
 
 ## Technical Stack
 
@@ -124,9 +123,7 @@ python -m x987 collect
 python -m x987 scrape
 python -m x987 transform
 python -m x987 dedupe
-python -m x987 fairvalue
 python -m x987 rank
-python -m x987 report
 
 # System diagnostics
 python -m x987 doctor
@@ -134,7 +131,7 @@ python -m x987 doctor
 
 ### Configuration
 - Use `x987-config/config.toml` at the repo root (auto-created on setup)
-- Modify search URLs, scraping parameters, and fair value settings
+- Modify search URLs and scraping parameters
 - Use environment variables for overrides when needed
 
 ## Contributing

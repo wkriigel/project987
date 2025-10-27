@@ -12,8 +12,7 @@ Each pipeline step has its own dedicated file:
 - **`scraping.py`** - Scrapes vehicle data from collected URLs  
 - **`transformation.py`** - Transforms raw scraped data into normalized format
 - **`deduplication.py`** - Removes duplicate vehicle listings
-- **`fair_value.py`** - Calculates fair values and deal deltas
-- **`ranking.py`** - Ranks vehicle listings by deal delta and other criteria
+- **`ranking.py`** - Ranks vehicle listings by total options MSRP
 
 ### Base Classes
 

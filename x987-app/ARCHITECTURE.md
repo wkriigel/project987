@@ -54,22 +54,19 @@ x987-app/
 │   │   ├── scrape_clean.py      # Clean scraping (NEW)
 │   │   ├── transform.py         # Data transformation
 │   │   ├── dedupe.py            # Data deduplication
-│   │   ├── fairvalue.py         # Fair value calculation
-│   │   └── rank.py              # Data ranking
+│   │   └── rank.py              # Data ranking (MSRP-only)
 │   ├── view/                     # Data visualization
 │   │   ├── __init__.py          # View public API
-│   │   ├── theme.py             # Styling and theming (NEW)
-│   │   ├── report_clean.py      # Clean report generation (NEW)
-│   │   └── report_fixed.py      # Legacy report (deprecated)
+│   │   ├── theme.py             # Styling and theming
 │   ├── utils/                    # Common utilities
 │   │   ├── __init__.py          # Utils public API
-│   │   ├── csv_io.py            # CSV I/O operations
+│   │   ├── io.py                # General I/O operations
 │   │   ├── io.py                # General I/O operations
 │   │   ├── log.py               # Logging utilities
 │   │   └── text.py              # Text processing utilities
 │   ├── schema.py                 # Data models and schemas
 │   ├── settings.py               # Legacy settings (deprecated)
-│   ├── fair_value.py            # Legacy fair value step (no-op in MSRP-only)
+│   ├── fair_value.py            # Removed (MSRP-only pipeline)
 │   ├── options_v2.py            # Options detection system
 │   └── doctor.py                 # System diagnostics
 ```
@@ -120,10 +117,6 @@ view/ → utils/ → schema/ → settings/
 ```toml
 [search]
 urls = ["https://autotempest.com/..."]
-
-[fair_value]
-base_value_usd = 30500
-year_step_usd = 500
 
 [scraping]
 concurrency = 2
@@ -225,7 +218,7 @@ python -m x987 scrape
 
 ### 3. Modifying Display
 1. Update theme configuration in `view/theme.py`
-2. Modify formatting functions in `view/report_clean.py`
+2. Modify formatting in the View step (`pipeline/steps/view.py`)
 3. Test with different data scenarios
 
 ### 4. Configuration Changes

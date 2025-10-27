@@ -4,8 +4,7 @@ URL↔VIN index utilities
 Stores a mapping from canonical listing URL → VIN so the scraping step can
 skip opening VDP pages when VIN enrichment exists.
 
-Primary storage: SQLite (when storage.mode = 'sqlite').
-Fallback storage: x987-data/metadata/url_vin_index.json
+Primary storage: SQLite (storage.mode = 'sqlite').
 Shape: { "<canonical_url>": "VIN", ... }
 """
 
@@ -42,7 +41,7 @@ def _index_path() -> Path:
 
 
 def load_index() -> Dict[str, str]:
-    # Prefer DB when enabled
+    # DB-backed only; return empty mapping if DB is unavailable
     if _is_sqlite_enabled() and _db_conn is not None and _db_ensure is not None:
         try:
             cfg = get_config()
@@ -54,18 +53,12 @@ def load_index() -> Dict[str, str]:
             finally:
                 conn.close()
         except Exception:
-            # Fall through to JSON
-            pass
-    try:
-        p = _index_path()
-        if p.exists():
-            return json.loads(p.read_text(encoding='utf-8')) or {}
-    except Exception:
-        pass
+            return {}
     return {}
 
 
 def save_index(idx: Dict[str, str]) -> None:
+    # DB-backed only; no-op if DB unavailable
     if _is_sqlite_enabled() and _db_conn is not None and _db_upsert is not None and _db_ensure is not None:
         try:
             cfg = get_config()
@@ -77,19 +70,14 @@ def save_index(idx: Dict[str, str]) -> None:
                         _db_upsert(conn, url, vin)
             finally:
                 conn.close()
-            return
         except Exception:
-            pass
-    try:
-        p = _index_path()
-        p.write_text(json.dumps(idx, indent=2), encoding='utf-8')
-    except Exception:
-        pass
+            return
 
 
 def upsert_url_vin(canonical_url: str, vin: str) -> None:
     if not canonical_url or not vin:
         return
+    # DB-backed only; no-op if DB unavailable
     if _is_sqlite_enabled() and _db_conn is not None and _db_upsert is not None and _db_ensure is not None:
         try:
             cfg = get_config()
@@ -99,14 +87,5 @@ def upsert_url_vin(canonical_url: str, vin: str) -> None:
                 _db_upsert(conn, canonical_url, vin)
             finally:
                 conn.close()
-            return
         except Exception:
-            pass
-    try:
-        idx = load_index()
-        if idx.get(canonical_url) == vin:
             return
-        idx[canonical_url] = vin
-        save_index(idx)
-    except Exception:
-        pass

@@ -14,7 +14,7 @@ Each field has its own dedicated file:
 - **`model_trim.py`** - Extracts model and trim as combined field (ModelTrim)
 - **`colors.py`** - Extracts exterior and interior colors
 - **`source.py`** - Extracts source/website from URLs or text
-- **`deal.py`** - Calculates deal delta (fair value minus asking price)
+<!-- deal/deal delta removed in MSRP-only pipeline -->
 
 ### Base Classes
 
@@ -54,7 +54,7 @@ The `UnifiedExtractor` provides the same interface as the current extraction fun
 - `extract_model_trim_from_text(text)`
 - `extract_colors_from_text(text)`
 - `extract_source_from_text(text, url)`
-- `extract_deal_delta(fair_value, asking_price)`
+<!-- extract_deal_delta removed in MSRP-only pipeline -->
 
 ## Usage
 
