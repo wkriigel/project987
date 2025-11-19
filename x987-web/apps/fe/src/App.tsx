@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import type React from 'react'
 import type { MouseEvent } from 'react'
-import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented, Button, Tooltip } from 'antd'
+import { Layout, Tabs, Table, Typography, Space, Spin, Card, ConfigProvider, Input, InputNumber, Select, Segmented, Button, Tooltip, Rate } from 'antd'
 import { CopyOutlined, StarFilled, StarOutlined, SortAscendingOutlined, SortDescendingOutlined, AimOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import type { ColumnsType } from 'antd/es/table'
@@ -45,19 +45,41 @@ export function App() {
   const [bmFullOpen, setBmFullOpen] = useState(false)
   const [bmInspectOpen, setBmInspectOpen] = useState(false)
   const [tableFilters, setTableFilters] = useState<Record<string, any[] | null>>({})
-  // Favorites (persisted across pipeline updates via localStorage)
-  const FAV_STORE_KEY = 'x987_favorites_v1'
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
+  // Ratings: 0..5 stars; 5 stars act as Favorites for filtering/highlight
+  type RatingValue = 0|1|2|3|4|5
+  const RATING_STORE_KEY = 'x987_ratings_v1'
+  const FAV_STORE_KEY = 'x987_favorites_v1' // read-only for migration
+  const [ratings, setRatings] = useState<Record<string, RatingValue>>(() => {
     try {
-      const raw = localStorage.getItem(FAV_STORE_KEY)
-      const arr: string[] = raw ? JSON.parse(raw) : []
-      return new Set(arr.filter(Boolean))
-    } catch { return new Set() }
+      const raw = localStorage.getItem(RATING_STORE_KEY)
+      const obj = raw ? JSON.parse(raw) : {}
+      const out: Record<string, RatingValue> = {}
+      if (obj && typeof obj === 'object') {
+        for (const [k, v] of Object.entries(obj)) {
+          const n = Number(v)
+          if (!Number.isNaN(n)) {
+            const vv = Math.max(0, Math.min(5, Math.round(n))) as RatingValue
+            out[k] = vv
+          }
+        }
+      }
+      // Migration: seed 5-star from prior favorites
+      const favRaw = localStorage.getItem(FAV_STORE_KEY)
+      if (favRaw) {
+        try {
+          const favArr: string[] = JSON.parse(favRaw)
+          for (const k of (favArr || [])) {
+            if (k) out[k] = 5
+          }
+        } catch {}
+      }
+      return out
+    } catch { return {} }
   })
   useEffect(() => {
-    try { localStorage.setItem(FAV_STORE_KEY, JSON.stringify(Array.from(favorites))) } catch {}
-  }, [favorites])
-  // One-time action: mark specific VINs as favorites (simulates manual starring once)
+    try { localStorage.setItem(RATING_STORE_KEY, JSON.stringify(ratings)) } catch {}
+  }, [ratings])
+  // One-time action: seed some VINs as 5-star (simulates initial ratings)
   useEffect(() => {
     try {
       const DONE_KEY = 'x987_seed_favs_once'
@@ -71,9 +93,12 @@ export function App() {
         'WP0CB2A84ES140670',
         'WP0AB2A89FK182065'
       ]
-      setFavorites(prev => {
-        const next = new Set(prev)
-        seedVins.forEach(v => { const k = `VIN:${String(v || '').trim().toUpperCase()}`; if (k) next.add(k) })
+      setRatings(prev => {
+        const next = { ...prev }
+        seedVins.forEach(v => {
+          const k = `VIN:${String(v || '').trim().toUpperCase()}`
+          if (k) next[k] = 5
+        })
         return next
       })
       localStorage.setItem(DONE_KEY, '1')
@@ -280,9 +305,9 @@ export function App() {
 
   const columns: ColumnsType<RankingRecord> = useMemo(() => [
     {
-      title: '',
-      key: 'fav',
-      width: 48,
+      title: 'Rating',
+      key: 'rating',
+      width: 120,
       align: 'center',
       render: (_: any, r: any) => {
         try {
@@ -303,18 +328,42 @@ export function App() {
             const m = toInt(r?.mileage) || 0
             return `ROW:${y}-${mt}-${p}-${m}`
           })()
-          const isFav = favorites.has(k)
-          const onToggle = (e: MouseEvent) => {
-            try { e.stopPropagation() } catch {}
-            setFavorites(prev => {
-              const next = new Set(prev)
-              if (next.has(k)) next.delete(k); else next.add(k)
-              return next
-            })
+          const value: RatingValue = (ratings[k] ?? 0) as RatingValue
+          const starColorMap: Record<RatingValue, string> = {
+            0: '#9AA1A9',
+            1: '#E63946', // Crimson Red
+            2: '#F3722C', // Burnt Orange
+            3: '#F9C74F', // Golden Yellow
+            4: '#90BE6D', // Lime Green
+            5: '#43AA8B'  // Bright Aqua / Teal-Green
+          }
+          const activeColor = starColorMap[value]
+          const starOpacityMap: Record<RatingValue, number> = {
+            0: 1.0,
+            1: 0.25,
+            2: 0.50,
+            3: 0.65,
+            4: 0.85,
+            5: 1.00
+          }
+          const activeOpacity = starOpacityMap[value]
+          const onChange = (val: number) => {
+            try {
+              const v = Math.max(0, Math.min(5, Math.round(val))) as RatingValue
+              setRatings(prev => ({ ...prev, [k]: v }))
+            } catch {}
           }
           return (
-            <Button type="text" size="small" aria-label={isFav ? 'Unfavorite' : 'Favorite'} onClick={onToggle}
-              icon={isFav ? <StarFilled style={{ color: '#f1c40f' }} /> : <StarOutlined style={{ color: '#999' }} />}
+            <Rate
+              className="rate-colored"
+              style={{
+                ['--rate-active-color' as any]: activeColor,
+                ['--rate-active-opacity' as any]: activeOpacity,
+                ['--rate-empty-opacity' as any]: (value === 0 ? 0.10 : undefined)
+              }}
+              value={value}
+              onChange={onChange}
+              allowHalf={false}
             />
           )
         } catch { return null }
@@ -804,7 +853,7 @@ export function App() {
         } catch { return '' }
       }
     }
-  ], [optionFacets, vinMap, sortState, favorites])
+  ], [optionFacets, vinMap, sortState, ratings])
 
   const filtered = useMemo(() => {
     // Apply generation filter first (on merged base rows)
@@ -839,7 +888,7 @@ export function App() {
         return p == null ? true : p <= maxPrice
       })
     }
-    // Apply favorites filter
+    // Apply favorites filter (5-star ratings)
     if (favOnly) {
       rows = rows.filter((r: any) => {
         try {
@@ -860,12 +909,12 @@ export function App() {
             const m = toInt(r?.mileage) || 0
             return `ROW:${y}-${mt}-${p}-${m}`
           })()
-          return favorites.has(k)
+          return (ratings as any)[k] === 5
         } catch { return false }
       })
     }
     return rows
-  }, [baseRows, generation, body, completeness, maxPrice, vinMap, favOnly, candidatesOnly, favorites])
+  }, [baseRows, generation, body, completeness, maxPrice, vinMap, favOnly, candidatesOnly, ratings])
   
   const sorted = useMemo(() => {
     const rows = [...filtered]
@@ -1100,14 +1149,21 @@ export function App() {
                       const m = toInt((r as any).mileage) || 0
                       return `ROW:${y}-${mt}-${p}-${m}`
                     })()
-                    const fav = favorites.has(k)
+                    const fav = ((ratings as any)[k] === 5)
                     if (enriched && fav) return 'row-enriched row-favorite'
                     if (enriched) return 'row-enriched'
                     if (fav) return 'row-favorite'
                     return ''
                   } catch { return '' }
                 }}
-                pagination={{ current: page.current, pageSize: page.pageSize }}
+                pagination={{
+                  current: page.current,
+                  pageSize: page.pageSize,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['50', '100', '250', '500'],
+                  showQuickJumper: true,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`
+                }}
                 onChange={(pag, _filters, sorter: any) => {
                   setPage({ current: pag?.current ?? 1, pageSize: pag?.pageSize ?? page.pageSize })
                   try { setTableFilters(_filters as any) } catch {}
@@ -1605,6 +1661,8 @@ function isRecordComplete(rec: any, vinMap: Record<string, any>): boolean {
   try {
     const vin = String((rec?.vin || rec?.VIN || '')).trim().toUpperCase()
     if (!vin) return false
+    // Treat VINs that are all zeros as incomplete
+    if (/^0+$/.test(vin)) return false
     const enriched = vin ? vinMap[vin] : null
     const year = (() => {
       try { return enriched?.parsed?.year != null ? toInt(enriched.parsed.year) : toInt(rec.year) } catch { return toInt(rec.year) }

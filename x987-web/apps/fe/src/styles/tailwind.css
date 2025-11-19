@@ -16,3 +16,48 @@
 .ant-table .row-enriched.row-favorite > td {
   background-color: rgba(255, 255, 255, 0.14) !important;
 }
+
+/* Colorized 5-star rating (gradient from red to green) */
+.rate-colored {
+  font-size: 12px !important; /* shrink stars to ~half size */
+  line-height: 1;
+}
+.rate-colored .ant-rate-star {
+  margin-inline-end: 2px !important; /* tighter spacing for small stars */
+}
+.rate-colored .ant-rate-star .anticon {
+  color: #9AA1A9; /* muted for empty stars */
+}
+
+/* Non-hover default opacity for empty stars (e.g., 0-star ratings) */
+.rate-colored:not(:hover) .ant-rate-star .anticon {
+  opacity: var(--rate-empty-opacity, 1) !important;
+}
+
+/* When not hovering, fill all selected stars with the highest star color */
+.rate-colored:not(:hover) .ant-rate-star.ant-rate-star-full .anticon,
+.rate-colored:not(:hover) .ant-rate-star.ant-rate-star-half .anticon {
+  color: var(--rate-active-color, #43AA8B) !important; /* fallback to 5-star color */
+  opacity: var(--rate-active-opacity, 1) !important; /* saved-state opacity */
+}
+
+.rate-colored:hover .ant-rate-star.ant-rate-star-full:nth-child(1) .anticon,
+.rate-colored:hover .ant-rate-star.ant-rate-star-half:nth-child(1) .anticon {
+  color: #E63946 !important; /* 1: Crimson Red */
+}
+.rate-colored:hover .ant-rate-star.ant-rate-star-full:nth-child(2) .anticon,
+.rate-colored:hover .ant-rate-star.ant-rate-star-half:nth-child(2) .anticon {
+  color: #F3722C !important; /* 2: Burnt Orange */
+}
+.rate-colored:hover .ant-rate-star.ant-rate-star-full:nth-child(3) .anticon,
+.rate-colored:hover .ant-rate-star.ant-rate-star-half:nth-child(3) .anticon {
+  color: #F9C74F !important; /* 3: Golden Yellow */
+}
+.rate-colored:hover .ant-rate-star.ant-rate-star-full:nth-child(4) .anticon,
+.rate-colored:hover .ant-rate-star.ant-rate-star-half:nth-child(4) .anticon {
+  color: #90BE6D !important; /* 4: Lime Green */
+}
+.rate-colored:hover .ant-rate-star.ant-rate-star-full:nth-child(5) .anticon,
+.rate-colored:hover .ant-rate-star.ant-rate-star-half:nth-child(5) .anticon {
+  color: #43AA8B !important; /* 5: Bright Aqua / Teal-Green */
+}
