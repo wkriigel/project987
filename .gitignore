@@ -5,6 +5,7 @@ __pycache__/
 
 # Local data outputs
 x987-app/x987-data/
+x987-data/results/
 
 # Node artifacts (if any)
 node_modules/
@@ -26,3 +27,6 @@ x987-data/x987.db
 # OS cruft & logs
 .DS_Store
 *.log
+
+# Legacy docs/image folder
+old requirements/
