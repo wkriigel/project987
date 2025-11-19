@@ -4,6 +4,9 @@ Overview
 - End‑to‑end system to collect, transform, rank and view Porsche listings.
 - Python pipeline produces CSVs; a Node API serves them to a React FE.
 
+Project Status
+- Paused as of 2025-11-19. See `REPO_STATUS.md` and `RESUME_GUIDE.md` for details and how to resume.
+
 Repo layout
 - Python: `x987-app/` (pipeline, scrapers, options, config)
 - Config: `x987-config/config.toml` (single canonical config)
@@ -25,14 +28,14 @@ Quick start
 
 2) Start API (serves latest CSV automatically)
    - `cd x987-web/apps/api`
-   - `npm ci && npm run build`
+   - `npm install && npm run build`
    - `node dist/index.js`
    - Health check: `curl http://localhost:4000/api/health`
    - Data: `curl http://localhost:4000/api/ranking/latest`
 
 3) Start FE (React/Ant Design)
    - `cd x987-web/apps/fe`
-   - `npm ci && npm run dev`
+   - `npm install && npm run dev`
    - Open the indicated local URL
 
 Configuration
@@ -53,3 +56,8 @@ Standards
 - Results auto‑discovered across canonical and legacy directories.
 - No committed build artifacts (`dist/`, `storybook-static/`).
 
+Beginner Setup
+- New to GitHub projects? Start with `GETTING_STARTED.md` for a step‑by‑step guide.
+
+Archive
+- Historical specs and one-off assets live under `archive/`. See `archive/README.md`.
